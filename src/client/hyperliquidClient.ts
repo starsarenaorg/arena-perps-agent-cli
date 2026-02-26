@@ -1,6 +1,13 @@
 import { config } from "../config.js";
 import type { HlClearinghouseState, HlOpenOrder } from "../types.js";
 
+interface HlMarketSnapshot {
+  coin: string;
+  markPx: string;
+  midPx?: string;
+  [key: string]: unknown;
+}
+
 export class HyperliquidClient {
   private readonly infoUrl: string;
 
@@ -37,6 +44,21 @@ export class HyperliquidClient {
       type: "openOrders",
       user: userAddress,
     });
+  }
+
+  async getAllMids(): Promise<HlMarketSnapshot[]> {
+    return this.post<HlMarketSnapshot[]>({
+      type: "allMids",
+    });
+  }
+
+  async getMarketPrice(symbol: string): Promise<number> {
+    const mids = await this.getAllMids();
+    const market = mids.find((m) => m.coin === symbol);
+    if (!market) {
+      throw new Error(`Market price not found for ${symbol}`);
+    }
+    return parseFloat(market.midPx ?? market.markPx);
   }
 }
 

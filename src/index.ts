@@ -23,6 +23,7 @@ import {
   getOpenOrders,
   getClearinghouseState,
 } from "./trading/positions.js";
+import { hyperliquidClient } from "./client/hyperliquidClient.js";
 import type { HlAssetPosition, HlOpenOrder, TradingPair } from "./types.js";
 import { ArenaError } from "./utils/errors.js";
 
@@ -308,7 +309,16 @@ async function cmdTrade(): Promise<void> {
     const direction = (await rl.question("  Direction [long/short]: ")).trim().toLowerCase() as "long" | "short";
     const orderType = (await rl.question("  Order type [market/limit]: ")).trim().toLowerCase() as "market" | "limit";
     
-    const price = parseFloat(await rl.question("  Price (current market price or limit price): "));
+    let price: number;
+    
+    if (orderType === "market") {
+      console.log("→ Fetching current market price...");
+      price = await hyperliquidClient().getMarketPrice(symbol);
+      console.log(`  Current ${symbol} price: $${price.toLocaleString()}`);
+    } else {
+      price = parseFloat(await rl.question("  Limit price: "));
+    }
+    
     const marginAmount = parseFloat(await rl.question("  Margin (USDC): "));
     const leverage = parseInt(await rl.question("  Leverage (e.g. 10): "), 10);
 
@@ -327,9 +337,10 @@ async function cmdTrade(): Promise<void> {
     const tpInput = (await rl.question("  Take profit price (leave blank to skip): ")).trim();
     const slInput = (await rl.question("  Stop loss price (leave blank to skip): ")).trim();
 
+    const priceDisplay = orderType === "market" ? `~$${price.toLocaleString()}` : `$${price.toLocaleString()}`;
     const confirm = (
       await rl.question(
-        `\n  Confirm: ${direction.toUpperCase()} ${size.toFixed(6)} ${symbol} @ ${price} ×${leverage} ($${marginAmount} margin) [y/N]: `
+        `\n  Confirm: ${direction.toUpperCase()} ${size.toFixed(6)} ${symbol} @ ${priceDisplay} ×${leverage} ($${marginAmount} margin) [y/N]: `
       )
     )
       .trim()
