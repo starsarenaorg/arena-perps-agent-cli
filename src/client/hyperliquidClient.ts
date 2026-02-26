@@ -57,12 +57,27 @@ export class HyperliquidClient {
     }
     
     // Convert object format to array
-    return Object.entries(result).map(([coin, data]: [string, any]) => ({
-      coin,
-      markPx: data?.markPx ?? data?.px ?? "0",
-      midPx: data?.midPx ?? data?.px ?? data?.markPx,
-      ...data,
-    }));
+    // The API returns { "BTC": "95000.0", "ETH": "3500.0", ... }
+    const markets = Object.entries(result).map(([coin, priceData]: [string, any]) => {
+      // If priceData is a string, use it directly as the price
+      if (typeof priceData === "string") {
+        return {
+          coin,
+          midPx: priceData,
+          markPx: priceData,
+        };
+      }
+      
+      // If it's an object with nested price fields
+      return {
+        coin,
+        markPx: priceData?.markPx ?? priceData?.px ?? "0",
+        midPx: priceData?.midPx ?? priceData?.px ?? priceData?.markPx ?? "0",
+        ...priceData,
+      };
+    });
+    
+    return markets;
   }
 
   async getMarketPrice(symbol: string): Promise<number> {
@@ -73,9 +88,10 @@ export class HyperliquidClient {
         `Market price not found for ${symbol}. Available markets: ${mids.map(m => m.coin).slice(0, 10).join(", ")}...`
       );
     }
-    const price = parseFloat(market.midPx ?? market.markPx);
+    const priceStr = market.midPx ?? market.markPx ?? "0";
+    const price = parseFloat(priceStr);
     if (isNaN(price) || price <= 0) {
-      throw new Error(`Invalid price data for ${symbol}: ${JSON.stringify(market)}`);
+      throw new Error(`Invalid price for ${symbol}: "${priceStr}"`);
     }
     return price;
   }
