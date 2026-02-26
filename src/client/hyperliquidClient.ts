@@ -47,18 +47,37 @@ export class HyperliquidClient {
   }
 
   async getAllMids(): Promise<HlMarketSnapshot[]> {
-    return this.post<HlMarketSnapshot[]>({
+    const result = await this.post<HlMarketSnapshot[] | Record<string, unknown>>({
       type: "allMids",
     });
+    
+    // Handle if it returns an object instead of array
+    if (Array.isArray(result)) {
+      return result;
+    }
+    
+    // Convert object format to array
+    return Object.entries(result).map(([coin, data]: [string, any]) => ({
+      coin,
+      markPx: data?.markPx ?? data?.px ?? "0",
+      midPx: data?.midPx ?? data?.px ?? data?.markPx,
+      ...data,
+    }));
   }
 
   async getMarketPrice(symbol: string): Promise<number> {
     const mids = await this.getAllMids();
     const market = mids.find((m) => m.coin === symbol);
     if (!market) {
-      throw new Error(`Market price not found for ${symbol}`);
+      throw new Error(
+        `Market price not found for ${symbol}. Available markets: ${mids.map(m => m.coin).slice(0, 10).join(", ")}...`
+      );
     }
-    return parseFloat(market.midPx ?? market.markPx);
+    const price = parseFloat(market.midPx ?? market.markPx);
+    if (isNaN(price) || price <= 0) {
+      throw new Error(`Invalid price data for ${symbol}: ${JSON.stringify(market)}`);
+    }
+    return price;
   }
 }
 
