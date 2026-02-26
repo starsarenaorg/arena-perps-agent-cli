@@ -307,17 +307,29 @@ async function cmdTrade(): Promise<void> {
     const symbol = (await rl.question("  Symbol (e.g. BTC, ETH, xyz:TRUMP): ")).trim().toUpperCase();
     const direction = (await rl.question("  Direction [long/short]: ")).trim().toLowerCase() as "long" | "short";
     const orderType = (await rl.question("  Order type [market/limit]: ")).trim().toLowerCase() as "market" | "limit";
-    const size = parseFloat(await rl.question("  Size (base asset units, e.g. 0.001): "));
+    
     const price = parseFloat(await rl.question("  Price (current market price or limit price): "));
     const marginAmount = parseFloat(await rl.question("  Margin (USDC): "));
     const leverage = parseInt(await rl.question("  Leverage (e.g. 10): "), 10);
+
+    // Auto-calculate size from margin and leverage
+    const notionalValue = marginAmount * leverage;
+    const calculatedSize = notionalValue / price;
+    
+    console.log(`\n  → Auto-calculated size: ${calculatedSize.toFixed(6)} ${symbol} (${notionalValue.toFixed(2)} USDC notional)`);
+    
+    const sizeInput = (
+      await rl.question(`  Size (press Enter to use ${calculatedSize.toFixed(6)}, or enter custom): `)
+    ).trim();
+    
+    const size = sizeInput ? parseFloat(sizeInput) : calculatedSize;
 
     const tpInput = (await rl.question("  Take profit price (leave blank to skip): ")).trim();
     const slInput = (await rl.question("  Stop loss price (leave blank to skip): ")).trim();
 
     const confirm = (
       await rl.question(
-        `\n  Confirm: ${direction.toUpperCase()} ${size} ${symbol} @ ${price} ×${leverage} [y/N]: `
+        `\n  Confirm: ${direction.toUpperCase()} ${size.toFixed(6)} ${symbol} @ ${price} ×${leverage} ($${marginAmount} margin) [y/N]: `
       )
     )
       .trim()
