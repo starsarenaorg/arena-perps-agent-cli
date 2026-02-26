@@ -355,11 +355,46 @@ async function cmdTrade(): Promise<void> {
       price = await hyperliquidClient().getMarketPrice(symbol);
       console.log(`  Current ${symbol} price: $${price.toLocaleString()}\n`);
     } else {
-      const priceInput = await textInput({
-        message: "Limit price:",
-        validate: (value) => !isNaN(parseFloat(value)) || "Please enter a valid number"
+      // Fetch market price for limit order offset calculation
+      console.log("→ Fetching current market price...");
+      const marketPrice = await hyperliquidClient().getMarketPrice(symbol);
+      console.log(`  Current ${symbol} price: $${marketPrice.toLocaleString()}\n`);
+      
+      // Show percentage-based limit price selection
+      const limitOffsetChoices = direction === "long"
+        ? [
+            { name: "-0.05% (below market)", value: "-0.05" },
+            { name: "-0.1%", value: "-0.1" },
+            { name: "-0.5%", value: "-0.5" },
+            { name: "-1%", value: "-1" },
+            { name: "-2%", value: "-2" },
+            { name: "Custom (manual entry)", value: "custom" }
+          ]
+        : [
+            { name: "+0.05% (above market)", value: "+0.05" },
+            { name: "+0.1%", value: "+0.1" },
+            { name: "+0.5%", value: "+0.5" },
+            { name: "+1%", value: "+1" },
+            { name: "+2%", value: "+2" },
+            { name: "Custom (manual entry)", value: "custom" }
+          ];
+      
+      const limitChoice = await select({
+        message: "Limit price offset from market:",
+        choices: limitOffsetChoices
       });
-      price = parseFloat(priceInput);
+      
+      if (limitChoice === "custom") {
+        const priceInput = await textInput({
+          message: "Limit price:",
+          validate: (value) => !isNaN(parseFloat(value)) || "Please enter a valid number"
+        });
+        price = parseFloat(priceInput);
+      } else {
+        const pct = parseFloat(limitChoice) / 100;
+        price = marketPrice * (1 + pct);
+        console.log(`  Limit price set to: $${price.toLocaleString()} (${limitChoice}%)\n`);
+      }
     }
 
     const marginInput = await textInput({
@@ -398,22 +433,109 @@ async function cmdTrade(): Promise<void> {
     let stopLossPrice: number | undefined;
 
     if (addTpSl) {
-      const tpInput = await textInput({
-        message: "Take profit price (leave empty to skip):",
-        validate: (value) => !value || !isNaN(parseFloat(value)) || "Please enter a valid number"
+      // Take Profit selection
+      const tpChoices = direction === "long"
+        ? [
+            { name: "+10% (profit when price rises)", value: "+10" },
+            { name: "+25%", value: "+25" },
+            { name: "+50%", value: "+50" },
+            { name: "+100%", value: "+100" },
+            { name: "+200%", value: "+200" },
+            { name: "Custom (manual entry)", value: "custom" },
+            { name: "Skip", value: "skip" }
+          ]
+        : [
+            { name: "-10% (profit when price drops)", value: "-10" },
+            { name: "-25%", value: "-25" },
+            { name: "-50%", value: "-50" },
+            { name: "Custom (manual entry)", value: "custom" },
+            { name: "Skip", value: "skip" }
+          ];
+      
+      const tpChoice = await select({
+        message: "Take profit:",
+        choices: tpChoices
       });
-      if (tpInput) takeProfitPrice = parseFloat(tpInput);
+      
+      if (tpChoice !== "skip") {
+        if (tpChoice === "custom") {
+          const tpInput = await textInput({
+            message: "Take profit price:",
+            validate: (value) => !isNaN(parseFloat(value)) || "Please enter a valid number"
+          });
+          takeProfitPrice = parseFloat(tpInput);
+        } else {
+          const pct = Math.abs(parseFloat(tpChoice)) / 100;
+          takeProfitPrice = direction === "long" 
+            ? price * (1 + pct) 
+            : price * (1 - pct);
+          console.log(`  TP set to: $${takeProfitPrice.toLocaleString()} (${tpChoice}%)`);
+        }
+      }
 
-      const slInput = await textInput({
-        message: "Stop loss price (leave empty to skip):",
-        validate: (value) => !value || !isNaN(parseFloat(value)) || "Please enter a valid number"
+      // Stop Loss selection
+      const slChoices = direction === "long"
+        ? [
+            { name: "-5% (stop if price drops)", value: "-5" },
+            { name: "-10%", value: "-10" },
+            { name: "-25%", value: "-25" },
+            { name: "-50%", value: "-50" },
+            { name: "Custom (manual entry)", value: "custom" },
+            { name: "Skip", value: "skip" }
+          ]
+        : [
+            { name: "+5% (stop if price rises)", value: "+5" },
+            { name: "+10%", value: "+10" },
+            { name: "+25%", value: "+25" },
+            { name: "+50%", value: "+50" },
+            { name: "+100%", value: "+100" },
+            { name: "Custom (manual entry)", value: "custom" },
+            { name: "Skip", value: "skip" }
+          ];
+      
+      const slChoice = await select({
+        message: "Stop loss:",
+        choices: slChoices
       });
-      if (slInput) stopLossPrice = parseFloat(slInput);
+      
+      if (slChoice !== "skip") {
+        if (slChoice === "custom") {
+          const slInput = await textInput({
+            message: "Stop loss price:",
+            validate: (value) => !isNaN(parseFloat(value)) || "Please enter a valid number"
+          });
+          stopLossPrice = parseFloat(slInput);
+        } else {
+          const pct = Math.abs(parseFloat(slChoice)) / 100;
+          stopLossPrice = direction === "long" 
+            ? price * (1 - pct) 
+            : price * (1 + pct);
+          console.log(`  SL set to: $${stopLossPrice.toLocaleString()} (${slChoice}%)`);
+        }
+      }
     }
 
     const priceDisplay = orderType === "market" ? `~$${price.toLocaleString()}` : `$${price.toLocaleString()}`;
+    
+    // Build confirmation message with TP/SL details
+    let confirmMessage = `Confirm: ${direction.toUpperCase()} ${size.toFixed(6)} ${symbol} @ ${priceDisplay} ×${leverage} ($${marginAmount} margin)`;
+    
+    if (takeProfitPrice || stopLossPrice) {
+      confirmMessage += "\n";
+      if (takeProfitPrice) {
+        const tpPct = ((takeProfitPrice - price) / price * 100).toFixed(2);
+        const tpSign = parseFloat(tpPct) >= 0 ? "+" : "";
+        confirmMessage += `\n  TP: $${takeProfitPrice.toLocaleString()} (${tpSign}${tpPct}%)`;
+      }
+      if (stopLossPrice) {
+        const slPct = ((stopLossPrice - price) / price * 100).toFixed(2);
+        const slSign = parseFloat(slPct) >= 0 ? "+" : "";
+        confirmMessage += `\n  SL: $${stopLossPrice.toLocaleString()} (${slSign}${slPct}%)`;
+      }
+    }
+    
     const confirmed = await confirm({
-      message: `Confirm: ${direction.toUpperCase()} ${size.toFixed(6)} ${symbol} @ ${priceDisplay} ×${leverage} ($${marginAmount} margin)`,
+      message: confirmMessage,
       default: false
     });
 
