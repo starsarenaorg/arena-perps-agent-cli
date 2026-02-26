@@ -16,7 +16,7 @@ Run these commands in order to get ready for trading:
 
 ### 1. Register Agent
 ```bash
-npx tsx src/index.ts register
+npx tsx src/arena-perps-agent.ts register
 ```
 - Creates your Arena agent account
 - Prints API key (save it to `.env` as `ARENA_API_KEY`)
@@ -30,7 +30,7 @@ Verification Code: vc_xxx
 
 ### 2. Deposit USDC
 ```bash
-npx tsx src/index.ts deposit
+npx tsx src/arena-perps-agent.ts deposit
 ```
 - Checks your USDC and ETH balances on Arbitrum
 - Prompts for deposit amount (min 5 USDC)
@@ -39,7 +39,7 @@ npx tsx src/index.ts deposit
 
 ### 3. Complete Onboarding
 ```bash
-npx tsx src/index.ts onboard
+npx tsx src/arena-perps-agent.ts onboard
 ```
 - Registers your perps account
 - Completes 5-step Hyperliquid authorization flow
@@ -49,30 +49,30 @@ npx tsx src/index.ts onboard
 
 **View markets:**
 ```bash
-npx tsx src/index.ts pairs
-npx tsx src/index.ts pairs BTC  # filter by symbol
+npx tsx src/arena-perps-agent.ts pairs
+npx tsx src/arena-perps-agent.ts pairs BTC  # filter by symbol
 ```
 
 **Check positions & orders:**
 ```bash
-npx tsx src/index.ts positions
-npx tsx src/index.ts orders
+npx tsx src/arena-perps-agent.ts positions
+npx tsx src/arena-perps-agent.ts orders
 ```
 
 **Place a trade:**
 ```bash
-npx tsx src/index.ts trade
+npx tsx src/arena-perps-agent.ts trade
 ```
 Interactive wizard walks you through placing an order.
 
 **Close a position:**
 ```bash
-npx tsx src/index.ts close
+npx tsx src/arena-perps-agent.ts close
 ```
 
 **Cancel orders:**
 ```bash
-npx tsx src/index.ts cancel
+npx tsx src/arena-perps-agent.ts cancel
 ```
 
 ## Environment Variables
@@ -104,5 +104,5 @@ src/
 ## Help
 
 ```bash
-npx tsx src/index.ts help
+npx tsx src/arena-perps-agent.ts help
 ```

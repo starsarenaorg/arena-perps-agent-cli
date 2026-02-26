@@ -2,11 +2,11 @@
   "name": "arena-perps-trading-agent",
   "version": "1.0.0",
   "description": "Perpetuals trading agent for The Arena / Hyperliquid",
-  "main": "dist/index.js",
+  "main": "dist/arena-perps-agent.js",
   "scripts": {
     "build": "tsc",
-    "start": "tsx src/index.ts",
-    "dev": "tsx watch src/index.ts"
+    "start": "tsx src/arena-perps-agent.ts",
+    "dev": "tsx watch src/arena-perps-agent.ts"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.3.0",
