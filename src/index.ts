@@ -381,37 +381,56 @@ async function cmdClose(): Promise<void> {
   try {
     console.log("\n── Close Position ──────────────────────────────────");
 
-    const symbol = (await rl.question("  Symbol: ")).trim().toUpperCase();
-    const positionSide = (
-      await rl.question("  Position side [long/short]: ")
-    ).trim().toLowerCase() as "long" | "short";
-    const currentPrice = parseFloat(
-      await rl.question("  Current market price: ")
-    );
+    // Fetch and display all open positions
+    console.log("→ Fetching open positions...");
+    const positions = await getPositions();
+
+    if (positions.length === 0) {
+      console.log("  No open positions to close.");
+      return;
+    }
+
+    console.log("\nOpen positions:");
+    positions.forEach((ap, index) => {
+      const p = ap.position;
+      const size = parseFloat(p.szi);
+      const side = size > 0 ? "LONG" : "SHORT";
+      const pnl = parseFloat(p.unrealizedPnl);
+      const pnlSign = pnl >= 0 ? "+" : "";
+      console.log(
+        `  [${index + 1}] ${p.coin.padEnd(8)} ${side.padEnd(6)} size=${Math.abs(size).toFixed(6)}  pnl=${pnlSign}${pnl.toFixed(2)} USDC  entry=${p.entryPx}`
+      );
+    });
+
+    const selectionInput = (
+      await rl.question("\n  Select position to close [1-" + positions.length + "]: ")
+    ).trim();
+
+    const selection = parseInt(selectionInput, 10);
+    if (isNaN(selection) || selection < 1 || selection > positions.length) {
+      console.log("  Invalid selection.");
+      return;
+    }
+
+    const selectedPosition = positions[selection - 1];
+    const p = selectedPosition.position;
+    const symbol = p.coin.toUpperCase();
+    const size = Math.abs(parseFloat(p.szi));
+    const positionSide = parseFloat(p.szi) > 0 ? "long" : "short";
+
+    // Fetch current market price
+    console.log("→ Fetching current market price...");
+    const currentPrice = await hyperliquidClient().getMarketPrice(symbol);
+    console.log(`  Current ${symbol} price: $${currentPrice.toLocaleString()}`);
+
     const closePercentInput = (
       await rl.question("  Close percent [1-100, default 100]: ")
     ).trim();
     const closePercent = closePercentInput ? parseInt(closePercentInput, 10) : 100;
 
-    const positions = await getPositions();
-    const pos = positions.find(
-      (ap) =>
-        ap.position.coin.toUpperCase() === symbol &&
-        (positionSide === "long"
-          ? parseFloat(ap.position.szi) > 0
-          : parseFloat(ap.position.szi) < 0)
-    );
-
-    if (!pos) {
-      console.log(`  No ${positionSide} position found for ${symbol}.`);
-      return;
-    }
-
-    const size = Math.abs(parseFloat(pos.position.szi));
-
     const confirm = (
       await rl.question(
-        `\n  Confirm close ${closePercent}% of ${positionSide} ${symbol} (size=${size}) [y/N]: `
+        `\n  Confirm close ${closePercent}% of ${positionSide} ${symbol} (size=${size.toFixed(6)}) @ ~$${currentPrice.toLocaleString()} [y/N]: `
       )
     )
       .trim()
@@ -425,7 +444,7 @@ async function cmdClose(): Promise<void> {
     console.log("→ Closing position...");
     const result = await closePosition({
       symbol,
-      positionSide,
+      positionSide: positionSide as "long" | "short",
       size,
       currentPrice,
       closePercent,
