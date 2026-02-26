@@ -9,6 +9,8 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.3.0",
+    "@inquirer/select": "^5.1.0",
     "dotenv": "^16.4.5",
     "viem": "^2.21.54"
   },

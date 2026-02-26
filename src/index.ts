@@ -1,6 +1,7 @@
 import "dotenv/config";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { select, input as textInput, confirm } from "@inquirer/prompts";
 import { config } from "./config.js";
 import { registerAgent } from "./onboarding/registerAgent.js";
 import { registerPerp } from "./onboarding/register.js";
@@ -300,27 +301,80 @@ async function cmdOrders(): Promise<void> {
 }
 
 async function cmdTrade(): Promise<void> {
-  const rl = readline.createInterface({ input, output });
-
   try {
     console.log("\n── Place Order ─────────────────────────────────────");
 
-    const symbol = (await rl.question("  Symbol (e.g. BTC, ETH, xyz:TRUMP): ")).trim().toUpperCase();
-    const direction = (await rl.question("  Direction [long/short]: ")).trim().toLowerCase() as "long" | "short";
-    const orderType = (await rl.question("  Order type [market/limit]: ")).trim().toLowerCase() as "market" | "limit";
+    // Fetch available markets for selection
+    console.log("→ Fetching available markets...");
+    const allPairs = await getAllPairs();
     
+    // Group by dex type
+    const defaultMarkets = allPairs.filter(p => p.dex === "default");
+    const xyzMarkets = allPairs.filter(p => p.dex === "xyz");
+    
+    const marketChoices = [
+      ...defaultMarkets.slice(0, 20).map(p => ({
+        name: `${p.symbol.padEnd(12)} (max ${p.maxLeverage}x leverage)`,
+        value: p.symbol,
+        description: `Asset ID: ${p.baseAssetId}`
+      })),
+      ...(xyzMarkets.length > 0 ? [{ name: "─── XYZ Markets ───", value: "separator", disabled: true }] : []),
+      ...xyzMarkets.slice(0, 10).map(p => ({
+        name: `${p.symbol.padEnd(12)} (max ${p.maxLeverage}x leverage)`,
+        value: p.symbol,
+        description: `Asset ID: ${p.baseAssetId}`
+      }))
+    ];
+
+    const symbol = await select({
+      message: "Select market:",
+      choices: marketChoices,
+      pageSize: 15
+    });
+
+    const direction = await select({
+      message: "Direction:",
+      choices: [
+        { name: "🟢 Long (Buy)", value: "long" },
+        { name: "🔴 Short (Sell)", value: "short" }
+      ]
+    });
+
+    const orderType = await select({
+      message: "Order type:",
+      choices: [
+        { name: "Market (Execute immediately)", value: "market" },
+        { name: "Limit (Execute at specific price)", value: "limit" }
+      ]
+    });
+
     let price: number;
     
     if (orderType === "market") {
       console.log("→ Fetching current market price...");
       price = await hyperliquidClient().getMarketPrice(symbol);
-      console.log(`  Current ${symbol} price: $${price.toLocaleString()}`);
+      console.log(`  Current ${symbol} price: $${price.toLocaleString()}\n`);
     } else {
-      price = parseFloat(await rl.question("  Limit price: "));
+      const priceInput = await textInput({
+        message: "Limit price:",
+        validate: (value) => !isNaN(parseFloat(value)) || "Please enter a valid number"
+      });
+      price = parseFloat(priceInput);
     }
-    
-    const marginAmount = parseFloat(await rl.question("  Margin (USDC): "));
-    const leverage = parseInt(await rl.question("  Leverage (e.g. 10): "), 10);
+
+    const marginInput = await textInput({
+      message: "Margin (USDC):",
+      default: "10",
+      validate: (value) => !isNaN(parseFloat(value)) && parseFloat(value) > 0 || "Please enter a valid amount"
+    });
+    const marginAmount = parseFloat(marginInput);
+
+    const leverageInput = await textInput({
+      message: "Leverage:",
+      default: "10",
+      validate: (value) => !isNaN(parseInt(value)) && parseInt(value) >= 1 || "Please enter a valid leverage"
+    });
+    const leverage = parseInt(leverageInput);
 
     // Auto-calculate size from margin and leverage
     const notionalValue = marginAmount * leverage;
@@ -328,25 +382,42 @@ async function cmdTrade(): Promise<void> {
     
     console.log(`\n  → Auto-calculated size: ${calculatedSize.toFixed(6)} ${symbol} (${notionalValue.toFixed(2)} USDC notional)`);
     
-    const sizeInput = (
-      await rl.question(`  Size (press Enter to use ${calculatedSize.toFixed(6)}, or enter custom): `)
-    ).trim();
-    
-    const size = sizeInput ? parseFloat(sizeInput) : calculatedSize;
+    const sizeInput = await textInput({
+      message: "Size:",
+      default: calculatedSize.toFixed(6),
+      validate: (value) => !isNaN(parseFloat(value)) && parseFloat(value) > 0 || "Please enter a valid size"
+    });
+    const size = parseFloat(sizeInput);
 
-    const tpInput = (await rl.question("  Take profit price (leave blank to skip): ")).trim();
-    const slInput = (await rl.question("  Stop loss price (leave blank to skip): ")).trim();
+    const addTpSl = await confirm({
+      message: "Add take profit / stop loss?",
+      default: false
+    });
+
+    let takeProfitPrice: number | undefined;
+    let stopLossPrice: number | undefined;
+
+    if (addTpSl) {
+      const tpInput = await textInput({
+        message: "Take profit price (leave empty to skip):",
+        validate: (value) => !value || !isNaN(parseFloat(value)) || "Please enter a valid number"
+      });
+      if (tpInput) takeProfitPrice = parseFloat(tpInput);
+
+      const slInput = await textInput({
+        message: "Stop loss price (leave empty to skip):",
+        validate: (value) => !value || !isNaN(parseFloat(value)) || "Please enter a valid number"
+      });
+      if (slInput) stopLossPrice = parseFloat(slInput);
+    }
 
     const priceDisplay = orderType === "market" ? `~$${price.toLocaleString()}` : `$${price.toLocaleString()}`;
-    const confirm = (
-      await rl.question(
-        `\n  Confirm: ${direction.toUpperCase()} ${size.toFixed(6)} ${symbol} @ ${priceDisplay} ×${leverage} ($${marginAmount} margin) [y/N]: `
-      )
-    )
-      .trim()
-      .toLowerCase();
+    const confirmed = await confirm({
+      message: `Confirm: ${direction.toUpperCase()} ${size.toFixed(6)} ${symbol} @ ${priceDisplay} ×${leverage} ($${marginAmount} margin)`,
+      default: false
+    });
 
-    if (confirm !== "y") {
+    if (!confirmed) {
       console.log("  Cancelled.");
       return;
     }
@@ -358,26 +429,28 @@ async function cmdTrade(): Promise<void> {
     console.log("→ Placing order...");
     const result = await placeOrder({
       symbol,
-      direction,
-      orderType,
+      direction: direction as "long" | "short",
+      orderType: orderType as "market" | "limit",
       size,
       price,
       marginAmount,
       leverage,
-      ...(tpInput ? { takeProfitPrice: parseFloat(tpInput) } : {}),
-      ...(slInput ? { stopLossPrice: parseFloat(slInput) } : {}),
+      ...(takeProfitPrice ? { takeProfitPrice } : {}),
+      ...(stopLossPrice ? { stopLossPrice } : {}),
     });
 
     console.log("  ✓ Order placed:");
     console.log(JSON.stringify(result, null, 2));
-  } finally {
-    rl.close();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("User force closed")) {
+      console.log("\n  Cancelled.");
+      return;
+    }
+    throw error;
   }
 }
 
 async function cmdClose(): Promise<void> {
-  const rl = readline.createInterface({ input, output });
-
   try {
     console.log("\n── Close Position ──────────────────────────────────");
 
@@ -390,29 +463,27 @@ async function cmdClose(): Promise<void> {
       return;
     }
 
-    console.log("\nOpen positions:");
-    positions.forEach((ap, index) => {
+    const positionChoices = positions.map((ap, index) => {
       const p = ap.position;
       const size = parseFloat(p.szi);
-      const side = size > 0 ? "LONG" : "SHORT";
+      const side = size > 0 ? "🟢 LONG" : "🔴 SHORT";
       const pnl = parseFloat(p.unrealizedPnl);
       const pnlSign = pnl >= 0 ? "+" : "";
-      console.log(
-        `  [${index + 1}] ${p.coin.padEnd(8)} ${side.padEnd(6)} size=${Math.abs(size).toFixed(6)}  pnl=${pnlSign}${pnl.toFixed(2)} USDC  entry=${p.entryPx}`
-      );
+      const pnlColor = pnl >= 0 ? "🟢" : "🔴";
+      
+      return {
+        name: `${p.coin.padEnd(8)} ${side.padEnd(8)} size=${Math.abs(size).toFixed(6)}  ${pnlColor} ${pnlSign}${pnl.toFixed(2)} USDC  entry=$${p.entryPx}`,
+        value: index,
+        description: `Liq: ${p.liquidationPx ?? "N/A"}`
+      };
     });
 
-    const selectionInput = (
-      await rl.question("\n  Select position to close [1-" + positions.length + "]: ")
-    ).trim();
+    const selection = await select({
+      message: "Select position to close:",
+      choices: positionChoices
+    });
 
-    const selection = parseInt(selectionInput, 10);
-    if (isNaN(selection) || selection < 1 || selection > positions.length) {
-      console.log("  Invalid selection.");
-      return;
-    }
-
-    const selectedPosition = positions[selection - 1];
+    const selectedPosition = positions[selection];
     const p = selectedPosition.position;
     const symbol = p.coin.toUpperCase();
     const size = Math.abs(parseFloat(p.szi));
@@ -421,27 +492,29 @@ async function cmdClose(): Promise<void> {
     // Fetch current market price
     console.log("→ Fetching current market price...");
     const currentPrice = await hyperliquidClient().getMarketPrice(symbol);
-    console.log(`  Current ${symbol} price: $${currentPrice.toLocaleString()}`);
+    console.log(`  Current ${symbol} price: $${currentPrice.toLocaleString()}\n`);
 
-    const closePercentInput = (
-      await rl.question("  Close percent [1-100, default 100]: ")
-    ).trim();
-    const closePercent = closePercentInput ? parseInt(closePercentInput, 10) : 100;
+    const closePercentInput = await textInput({
+      message: "Close percent (1-100):",
+      default: "100",
+      validate: (value) => {
+        const num = parseInt(value);
+        return (!isNaN(num) && num >= 1 && num <= 100) || "Please enter a number between 1 and 100";
+      }
+    });
+    const closePercent = parseInt(closePercentInput);
 
-    const confirm = (
-      await rl.question(
-        `\n  Confirm close ${closePercent}% of ${positionSide} ${symbol} (size=${size.toFixed(6)}) @ ~$${currentPrice.toLocaleString()} [y/N]: `
-      )
-    )
-      .trim()
-      .toLowerCase();
+    const confirmed = await confirm({
+      message: `Close ${closePercent}% of ${positionSide} ${symbol} (size=${size.toFixed(6)}) @ ~$${currentPrice.toLocaleString()}`,
+      default: true
+    });
 
-    if (confirm !== "y") {
+    if (!confirmed) {
       console.log("  Cancelled.");
       return;
     }
 
-    console.log("→ Closing position...");
+    console.log("\n→ Closing position...");
     const result = await closePosition({
       symbol,
       positionSide: positionSide as "long" | "short",
@@ -452,8 +525,12 @@ async function cmdClose(): Promise<void> {
 
     console.log("  ✓ Close order placed:");
     console.log(JSON.stringify(result, null, 2));
-  } finally {
-    rl.close();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("User force closed")) {
+      console.log("\n  Cancelled.");
+      return;
+    }
+    throw error;
   }
 }
 
