@@ -582,14 +582,29 @@ async function cmdTrade(): Promise<void> {
 
     // Auto-calculate size from margin and leverage
     const notionalValue = marginAmount * leverage;
-    const calculatedSize = notionalValue / price;
+    let calculatedSize = notionalValue / price;
     
-    console.log(`\n  → Auto-calculated size: ${calculatedSize.toFixed(6)} ${symbol} (${notionalValue.toFixed(2)} USDC notional)`);
+    // Ensure notional meets minimum $10 requirement by rounding up slightly if needed
+    const MIN_NOTIONAL = 10;
+    if (calculatedSize * price < MIN_NOTIONAL) {
+      calculatedSize = MIN_NOTIONAL / price;
+    }
+    
+    // Round to appropriate precision
+    const roundedSize = parseFloat(calculatedSize.toFixed(pair.sizePrecision));
+    
+    console.log(`\n  → Auto-calculated size: ${roundedSize} ${symbol.includes(":") ? symbol.split(":")[1] : symbol} ($${(roundedSize * price).toFixed(2)} notional)`);
     
     const sizeInput = await textInput({
       message: "Size:",
-      default: calculatedSize.toFixed(6),
-      validate: (value) => !isNaN(parseFloat(value)) && parseFloat(value) > 0 || "Please enter a valid size"
+      default: roundedSize.toString(),
+      validate: (value) => {
+        const sz = parseFloat(value);
+        if (isNaN(sz) || sz <= 0) return "Please enter a valid size";
+        const notional = sz * price;
+        if (notional < MIN_NOTIONAL) return `Order notional must be at least $${MIN_NOTIONAL} (current: $${notional.toFixed(2)})`;
+        return true;
+      }
     });
     const size = parseFloat(sizeInput);
 
