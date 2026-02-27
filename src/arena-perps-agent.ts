@@ -335,6 +335,123 @@ async function cmdOrders(): Promise<void> {
   }
 }
 
+// ─── Helper: Handle Scale Orders ──────────────────────────────────────────────
+
+async function handleScaleOrder(
+  symbol: string,
+  pair: TradingPair,
+  direction: "long" | "short"
+): Promise<void> {
+  // Get current market price
+  console.log("→ Fetching current market price...");
+  const marketPrice = await hyperliquidClient().getMarketPrice(symbol);
+  console.log(`  Current ${symbol} price: $${marketPrice.toLocaleString()}\n`);
+
+  const numOrders = parseInt(
+    await textInput({
+      message: "Number of orders (2-10):",
+      default: "5",
+      validate: (val) => {
+        const num = parseInt(val);
+        return num >= 2 && num <= 10 ? true : "Must be between 2 and 10";
+      },
+    })
+  );
+
+  const priceStart = parseFloat(
+    await textInput({
+      message: `First order price (${direction === "long" ? "below" : "above"} market):`,
+      default: direction === "long" 
+        ? (marketPrice * 0.99).toFixed(pair.pricePrecision)
+        : (marketPrice * 1.01).toFixed(pair.pricePrecision),
+    })
+  );
+
+  const priceEnd = parseFloat(
+    await textInput({
+      message: `Last order price (${direction === "long" ? "lowest" : "highest"}):`,
+      default: direction === "long"
+        ? (marketPrice * 0.95).toFixed(pair.pricePrecision)
+        : (marketPrice * 1.05).toFixed(pair.pricePrecision),
+    })
+  );
+
+  const totalNotionalUsd = parseFloat(
+    await textInput({
+      message: "Total size in USD (total notional across all orders):",
+      default: "100",
+    })
+  );
+
+  const leverage = parseInt(
+    await textInput({
+      message: `Leverage (1-${pair.maxLeverage}):`,
+      default: "10",
+      validate: (val) => {
+        const lev = parseInt(val);
+        return lev >= 1 && lev <= pair.maxLeverage
+          ? true
+          : `Must be between 1 and ${pair.maxLeverage}`;
+      },
+    })
+  );
+
+  // Auto-calculate values
+  const totalMargin = totalNotionalUsd / leverage;
+  const marginPerOrder = totalMargin / numOrders;
+  const avgPrice = (priceStart + priceEnd) / 2;
+  const totalSize = totalNotionalUsd / avgPrice;
+  const sizePerOrder = totalSize / numOrders;
+  const priceStep = (priceEnd - priceStart) / (numOrders - 1);
+
+  // Show summary
+  console.log("\n📋 Scale Order Summary:");
+  console.log(`   Market: ${symbol}`);
+  console.log(`   Direction: ${direction.toUpperCase()}`);
+  console.log(`   Number of orders: ${numOrders}`);
+  console.log(`   Price range: $${priceStart.toFixed(pair.pricePrecision)} → $${priceEnd.toFixed(pair.pricePrecision)}`);
+  console.log(`   Price step: $${Math.abs(priceStep).toFixed(pair.pricePrecision)}`);
+  console.log(`   Total notional: $${totalNotionalUsd.toFixed(2)}`);
+  console.log(`   Total margin: $${totalMargin.toFixed(2)} (${leverage}x leverage)`);
+  console.log(`   Margin per order: $${marginPerOrder.toFixed(2)}`);
+  console.log(`   Size per order: ~${sizePerOrder.toFixed(pair.sizePrecision)} ${pair.baseAsset}`);
+  console.log(`   Total size: ~${totalSize.toFixed(pair.sizePrecision)} ${pair.baseAsset}`);
+
+  console.log("\n📌 Orders will be placed at:");
+  for (let i = 0; i < numOrders; i++) {
+    const orderPrice = priceStart + priceStep * i;
+    console.log(`   ${i + 1}. $${orderPrice.toFixed(pair.pricePrecision)} - ${sizePerOrder.toFixed(pair.sizePrecision)} ${pair.baseAsset}`);
+  }
+
+  const confirmed = await confirm({
+    message: "Place these scale orders?",
+    default: false,
+  });
+
+  if (!confirmed) {
+    console.log("Cancelled.");
+    return;
+  }
+
+  console.log("\n⏳ Placing scale orders...");
+
+  const result = await placeScaleOrders({
+    symbol,
+    direction,
+    totalSize,
+    numOrders,
+    priceStart,
+    priceEnd,
+    marginPerOrder,
+    leverage,
+  });
+
+  console.log("\n✅ Scale orders placed successfully!");
+  console.log(JSON.stringify(result, null, 2));
+}
+
+// ─── Command: Trade ───────────────────────────────────────────────────────────
+
 async function cmdTrade(): Promise<void> {
   try {
     console.log("\n── Place Order ─────────────────────────────────────");
@@ -382,9 +499,16 @@ async function cmdTrade(): Promise<void> {
       message: "Order type:",
       choices: [
         { name: "Market (Execute immediately)", value: "market" },
-        { name: "Limit (Execute at specific price)", value: "limit" }
+        { name: "Limit (Execute at specific price)", value: "limit" },
+        { name: "Scale (Multiple orders across price range)", value: "scale" }
       ]
     });
+
+    // Handle scale orders differently
+    if (orderType === "scale") {
+      await handleScaleOrder(symbol, pair, direction);
+      return;
+    }
 
     let price: number;
     
@@ -756,144 +880,6 @@ async function cmdCancel(): Promise<void> {
 
 // ─── Command: Scale Orders ───────────────────────────────────────────────────
 
-async function cmdScale(): Promise<void> {
-  console.log("\n╔══════════════════════════════════════════════════════════════════════╗");
-  console.log("║                      📊 PLACE SCALE ORDERS                           ║");
-  console.log("╚══════════════════════════════════════════════════════════════════════╝\n");
-
-  console.log("→ Fetching available markets...");
-  const pairs = await getAllPairs();
-  
-  // Small delay before showing inquirer menu
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  const symbol = await select({
-    message: "Select market:",
-    choices: pairs.map((p) => ({
-      name: `${p.symbol.padEnd(15)} (max ${p.maxLeverage}x leverage)`,
-      value: p.symbol,
-      description: `Asset ID: ${p.baseAssetId}`,
-    })),
-  });
-
-  const pair = pairs.find((p) => p.symbol === symbol)!;
-
-  const direction = await select<"long" | "short">({
-    message: "Position direction:",
-    choices: [
-      { name: "Long (buy)", value: "long" },
-      { name: "Short (sell)", value: "short" },
-    ],
-  });
-
-  const numOrders = parseInt(
-    await textInput({
-      message: "Number of orders (2-10):",
-      default: "5",
-      validate: (val) => {
-        const num = parseInt(val);
-        return num >= 2 && num <= 10 ? true : "Must be between 2 and 10";
-      },
-    })
-  );
-
-  const currentPrice = await hyperliquidClient().getMarketPrice(symbol);
-  console.log(`\n💰 Current market price: $${currentPrice.toFixed(pair.pricePrecision)}`);
-
-  const priceStart = parseFloat(
-    await textInput({
-      message: `First order price (${direction === "long" ? "below" : "above"} market):`,
-      default: direction === "long" 
-        ? (currentPrice * 0.99).toFixed(pair.pricePrecision)
-        : (currentPrice * 1.01).toFixed(pair.pricePrecision),
-    })
-  );
-
-  const priceEnd = parseFloat(
-    await textInput({
-      message: `Last order price (${direction === "long" ? "lowest" : "highest"}):`,
-      default: direction === "long"
-        ? (currentPrice * 0.95).toFixed(pair.pricePrecision)
-        : (currentPrice * 1.05).toFixed(pair.pricePrecision),
-    })
-  );
-
-  const totalSize = parseFloat(
-    await textInput({
-      message: `Total size (will be split across ${numOrders} orders):`,
-    })
-  );
-
-  const marginPerOrder = parseFloat(
-    await textInput({
-      message: "Margin per order (USDC):",
-      default: "10",
-    })
-  );
-
-  const leverage = parseInt(
-    await textInput({
-      message: `Leverage (1-${pair.maxLeverage}):`,
-      default: "10",
-      validate: (val) => {
-        const lev = parseInt(val);
-        return lev >= 1 && lev <= pair.maxLeverage
-          ? true
-          : `Must be between 1 and ${pair.maxLeverage}`;
-      },
-    })
-  );
-
-  // Show summary
-  const sizePerOrder = totalSize / numOrders;
-  const priceStep = (priceEnd - priceStart) / (numOrders - 1);
-  const totalMargin = marginPerOrder * numOrders;
-
-  console.log("\n📋 Scale Order Summary:");
-  console.log(`   Market: ${symbol}`);
-  console.log(`   Direction: ${direction.toUpperCase()}`);
-  console.log(`   Number of orders: ${numOrders}`);
-  console.log(`   Price range: $${priceStart.toFixed(pair.pricePrecision)} → $${priceEnd.toFixed(pair.pricePrecision)}`);
-  console.log(`   Price step: $${Math.abs(priceStep).toFixed(pair.pricePrecision)}`);
-  console.log(`   Size per order: ${sizePerOrder.toFixed(pair.sizePrecision)} ${pair.baseAsset}`);
-  console.log(`   Total size: ${totalSize.toFixed(pair.sizePrecision)} ${pair.baseAsset}`);
-  console.log(`   Margin per order: $${marginPerOrder.toFixed(2)}`);
-  console.log(`   Total margin: $${totalMargin.toFixed(2)}`);
-  console.log(`   Leverage: ${leverage}x`);
-
-  console.log("\n📌 Orders will be placed at:");
-  for (let i = 0; i < numOrders; i++) {
-    const orderPrice = priceStart + priceStep * i;
-    console.log(`   ${i + 1}. $${orderPrice.toFixed(pair.pricePrecision)} - ${sizePerOrder.toFixed(pair.sizePrecision)} ${pair.baseAsset}`);
-  }
-
-  const confirmed = await confirm({
-    message: "Place these scale orders?",
-    default: false,
-  });
-
-  if (!confirmed) {
-    console.log("Cancelled.");
-    return;
-  }
-
-  console.log("\n⏳ Placing scale orders...");
-
-  const result = await placeScaleOrders({
-    symbol,
-    direction,
-    totalSize,
-    numOrders,
-    priceStart,
-    priceEnd,
-    marginPerOrder,
-    leverage,
-  });
-
-  console.log("\n✅ Scale orders placed successfully!");
-  console.log(JSON.stringify(result, null, 2));
-}
-
 function printHelp(): void {
   console.log(`
 Arena Perpetuals Trading Agent
@@ -908,8 +894,7 @@ Commands:
   pairs [query] List available trading pairs (optional symbol filter)
   positions     Show open positions and account summary
   orders        Show open orders
-  trade         Interactive order placement wizard
-  scale         Place scale/ladder orders at multiple price levels
+  trade         Interactive order placement (market/limit/scale)
   close         Interactive position close wizard
   cancel        Interactive order cancellation
   help          Show this help message
@@ -949,9 +934,6 @@ async function main(): Promise<void> {
         break;
       case "trade":
         await cmdTrade();
-        break;
-      case "scale":
-        await cmdScale();
         break;
       case "close":
         await cmdClose();
