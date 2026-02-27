@@ -332,6 +332,9 @@ async function cmdTrade(): Promise<void> {
     console.log("→ Fetching available markets...");
     const allPairs = await getAllPairs();
     
+    // Small delay to let the console settle
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // Group by dex type
     const defaultMarkets = allPairs.filter(p => p.dex === "default");
     const xyzMarkets = allPairs.filter(p => p.dex === "xyz");
