@@ -2,6 +2,8 @@
 
 TypeScript CLI agent for trading perpetuals on The Arena / Hyperliquid platform.
 
+![Demo](arena.gif)
+
 ## Quick Start
 
 ```bash

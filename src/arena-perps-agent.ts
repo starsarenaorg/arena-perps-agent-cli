@@ -290,13 +290,27 @@ async function cmdPositions(): Promise<void> {
   const totalNotional = parseFloat(ms.totalNtlPos);
   const withdrawable = parseFloat(state.withdrawable);
 
+  // Calculate exact padding to match 73-char box width (│ + 71 chars + │)
+  // Format: "│  Label (20)       │  $Value USDC (49 chars)                    │"
+  const formatLine = (label: string, value: number, hasColor = false) => {
+    const labelPart = label.padEnd(18);
+    const valuePart = `$${value.toFixed(2)} USDC`;
+    const padding = 49 - valuePart.length;
+    const spaces = " ".repeat(Math.max(0, padding));
+    
+    if (hasColor) {
+      return `│  ${labelPart}│  \x1b[32m${valuePart}\x1b[0m${spaces}│`;
+    }
+    return `│  ${labelPart}│  ${valuePart}${spaces}│`;
+  };
+
   console.log("\n┌─────────────────────────────────────────────────────────────────────┐");
   console.log("│  💰 Account Summary                                                 │");
   console.log("├─────────────────────────────────────────────────────────────────────┤");
-  console.log(`│  Account Value    │  $${accountValue.toFixed(2).padStart(10)} USDC                        │`);
-  console.log(`│  Margin Used      │  $${marginUsed.toFixed(2).padStart(10)} USDC                        │`);
-  console.log(`│  Total Notional   │  $${totalNotional.toFixed(2).padStart(10)} USDC                        │`);
-  console.log(`│  Withdrawable     │  \x1b[32m$${withdrawable.toFixed(2).padStart(10)}\x1b[0m USDC                        │`);
+  console.log(formatLine("Account Value", accountValue));
+  console.log(formatLine("Margin Used", marginUsed));
+  console.log(formatLine("Total Notional", totalNotional));
+  console.log(formatLine("Withdrawable", withdrawable, true));
   console.log("└─────────────────────────────────────────────────────────────────────┘");
 
   const positions = state.assetPositions.filter(
