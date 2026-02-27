@@ -81,6 +81,11 @@ export class HyperliquidClient {
   }
 
   async getMarketPrice(symbol: string): Promise<number> {
+    // For HIP-3 markets (xyz:*), we need to query the meta endpoint
+    if (symbol.startsWith("xyz:")) {
+      return this.getXyzMarketPrice(symbol);
+    }
+    
     const mids = await this.getAllMids();
     const market = mids.find((m) => m.coin === symbol);
     if (!market) {
@@ -89,6 +94,38 @@ export class HyperliquidClient {
       );
     }
     const priceStr = market.midPx ?? market.markPx ?? "0";
+    const price = parseFloat(priceStr);
+    if (isNaN(price) || price <= 0) {
+      throw new Error(`Invalid price for ${symbol}: "${priceStr}"`);
+    }
+    return price;
+  }
+
+  async getXyzMarketPrice(symbol: string): Promise<number> {
+    // For XYZ markets, we need to query metaAndAssetCtxs with dex: "xyz"
+    const meta = await this.post<any>({
+      type: "metaAndAssetCtxs",
+      dex: "xyz", // XYZ DEX
+    });
+    
+    // The universe is at meta[0].universe, already includes xyz: prefix
+    const universe = meta[0]?.universe || [];
+    const marketIndex = universe.findIndex((m: any) => m.name === symbol);
+    
+    if (marketIndex === -1) {
+      throw new Error(
+        `XYZ market not found: ${symbol}. Available: ${universe.slice(0, 10).map((m: any) => m.name).join(", ")}...`
+      );
+    }
+    
+    // Get the market price from assetCtxs (second element)
+    const assetCtxs = meta[1] || [];
+    const assetCtx = assetCtxs[marketIndex];
+    if (!assetCtx) {
+      throw new Error(`No price data available for ${symbol}`);
+    }
+    
+    const priceStr = assetCtx.midPx || assetCtx.markPx || "0";
     const price = parseFloat(priceStr);
     if (isNaN(price) || price <= 0) {
       throw new Error(`Invalid price for ${symbol}: "${priceStr}"`);
