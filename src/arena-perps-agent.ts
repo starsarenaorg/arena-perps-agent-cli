@@ -591,22 +591,10 @@ async function cmdTrade(): Promise<void> {
     }
     
     // Round to appropriate precision
-    const roundedSize = parseFloat(calculatedSize.toFixed(pair.sizePrecision));
+    const size = parseFloat(calculatedSize.toFixed(pair.sizePrecision));
+    const actualNotional = size * price;
     
-    console.log(`\n  → Auto-calculated size: ${roundedSize} ${symbol.includes(":") ? symbol.split(":")[1] : symbol} ($${(roundedSize * price).toFixed(2)} notional)`);
-    
-    const sizeInput = await textInput({
-      message: "Size:",
-      default: roundedSize.toString(),
-      validate: (value) => {
-        const sz = parseFloat(value);
-        if (isNaN(sz) || sz <= 0) return "Please enter a valid size";
-        const notional = sz * price;
-        if (notional < MIN_NOTIONAL) return `Order notional must be at least $${MIN_NOTIONAL} (current: $${notional.toFixed(2)})`;
-        return true;
-      }
-    });
-    const size = parseFloat(sizeInput);
+    console.log(`  → Auto-calculated size: ${size} ${symbol.includes(":") ? symbol.split(":")[1] : symbol} ($${actualNotional.toFixed(2)} notional)`);
 
     const addTpSl = await confirm({
       message: "Add take profit / stop loss?",
