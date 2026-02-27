@@ -376,10 +376,10 @@ async function handleScaleOrder(
     })
   );
 
-  const totalNotionalUsd = parseFloat(
+  const totalMargin = parseFloat(
     await textInput({
-      message: "Total size in USD (total notional across all orders):",
-      default: "100",
+      message: "Total margin (USDC) across all orders:",
+      default: "10",
     })
   );
 
@@ -397,10 +397,11 @@ async function handleScaleOrder(
   );
 
   // Auto-calculate values
-  const totalMargin = totalNotionalUsd / leverage;
   const marginPerOrder = totalMargin / numOrders;
+  const totalNotional = totalMargin * leverage;
+  const notionalPerOrder = totalNotional / numOrders;
   const avgPrice = (priceStart + priceEnd) / 2;
-  const totalSize = totalNotionalUsd / avgPrice;
+  const totalSize = totalNotional / avgPrice;
   const sizePerOrder = totalSize / numOrders;
   const priceStep = (priceEnd - priceStart) / (numOrders - 1);
 
@@ -411,9 +412,11 @@ async function handleScaleOrder(
   console.log(`   Number of orders: ${numOrders}`);
   console.log(`   Price range: $${priceStart.toFixed(pair.pricePrecision)} → $${priceEnd.toFixed(pair.pricePrecision)}`);
   console.log(`   Price step: $${Math.abs(priceStep).toFixed(pair.pricePrecision)}`);
-  console.log(`   Total notional: $${totalNotionalUsd.toFixed(2)}`);
-  console.log(`   Total margin: $${totalMargin.toFixed(2)} (${leverage}x leverage)`);
+  console.log(`   Leverage: ${leverage}x`);
+  console.log(`   Total margin: $${totalMargin.toFixed(2)}`);
+  console.log(`   Total notional: $${totalNotional.toFixed(2)}`);
   console.log(`   Margin per order: $${marginPerOrder.toFixed(2)}`);
+  console.log(`   Notional per order: $${notionalPerOrder.toFixed(2)}`);
   console.log(`   Size per order: ~${sizePerOrder.toFixed(pair.sizePrecision)} ${pair.baseAsset}`);
   console.log(`   Total size: ~${totalSize.toFixed(pair.sizePrecision)} ${pair.baseAsset}`);
 
