@@ -33,21 +33,27 @@ import { ArenaError } from "./utils/errors.js";
 function formatPosition(ap: HlAssetPosition): string {
   const p = ap.position;
   const size = parseFloat(p.szi);
-  const side = size > 0 ? "LONG" : "SHORT";
+  const side = size > 0 ? "LONG " : "SHORT";
   const pnl = parseFloat(p.unrealizedPnl);
   const pnlSign = pnl >= 0 ? "+" : "";
   const pnlColor = pnl >= 0 ? "\x1b[32m" : "\x1b[31m"; // Green or Red
   const sideColor = size > 0 ? "\x1b[32m" : "\x1b[31m";
   const reset = "\x1b[0m";
   
-  return [
-    `  ${p.coin.padEnd(8)}`,
-    `${sideColor}${side.padEnd(6)}${reset}`,
-    `size=${Math.abs(size).toFixed(6)}`,
-    `entry=$${parseFloat(p.entryPx).toLocaleString()}`,
-    `${pnlColor}pnl=${pnlSign}$${Math.abs(pnl).toFixed(2)}${reset}`,
-    `liq=${p.liquidationPx ? "$" + parseFloat(p.liquidationPx).toLocaleString() : "N/A"}`,
-  ].join("  ");
+  const sizeStr = Math.abs(size).toFixed(6);
+  const entryStr = parseFloat(p.entryPx).toFixed(0);
+  const pnlStr = Math.abs(pnl).toFixed(2);
+  const liqStr = p.liquidationPx ? parseFloat(p.liquidationPx).toFixed(0) : "N/A";
+  
+  // Build without colors first to measure length
+  const plainText = `${p.coin.padEnd(6)} ${side} sz=${sizeStr} @$${entryStr} pnl=${pnlSign}$${pnlStr} liq=$${liqStr}`;
+  
+  // Build with colors
+  const coloredText = `${p.coin.padEnd(6)} ${sideColor}${side}${reset} sz=${sizeStr} @$${entryStr} ${pnlColor}pnl=${pnlSign}$${pnlStr}${reset} liq=$${liqStr}`;
+  
+  // Pad to 65 characters (plain text length) to fit in box
+  const padding = 65 - plainText.length;
+  return coloredText + " ".repeat(Math.max(0, padding));
 }
 
 function formatOrder(o: HlOpenOrder): string {
@@ -306,7 +312,7 @@ async function cmdPositions(): Promise<void> {
     console.log(`│  📈 Open Positions (${positions.length})                                               │`);
     console.log("├─────────────────────────────────────────────────────────────────────┤");
     positions.forEach((ap) => {
-      console.log(`│  ${formatPosition(ap).padEnd(69)}│`);
+      console.log(`│  ${formatPosition(ap)}  │`);
     });
     console.log("└─────────────────────────────────────────────────────────────────────┘\n");
   }

@@ -5,7 +5,25 @@ Set Width 1200
 Set Height 600
 Set Theme "Dracula"
 
-# Show current positions (should be empty or show existing)
+# Deposit flow
+Type "npx tsx src/arena-perps-agent.ts deposit"
+Sleep 500ms
+Enter
+Sleep 3s
+
+# Enter deposit amount (10 USDC)
+Type "10"
+Sleep 500ms
+Enter
+Sleep 1s
+
+# Confirm deposit
+Type "y"
+Sleep 500ms
+Enter
+Sleep 4s
+
+# Show initial positions (should be empty)
 Type "npx tsx src/arena-perps-agent.ts positions"
 Sleep 500ms
 Enter
@@ -97,13 +115,13 @@ Sleep 1s
 Type "y"
 Sleep 500ms
 Enter
-Sleep 3s
+Sleep 4s
 
 # Show positions with the new order
 Type "npx tsx src/arena-perps-agent.ts positions"
 Sleep 500ms
 Enter
-Sleep 3s
+Sleep 4s
 
 # Close the position
 Type "npx tsx src/arena-perps-agent.ts close"
@@ -125,7 +143,7 @@ Sleep 1.5s
 Type "y"
 Sleep 500ms
 Enter
-Sleep 3s
+Sleep 4s
 
 # Show final positions (should be empty)
 Type "npx tsx src/arena-perps-agent.ts positions"
