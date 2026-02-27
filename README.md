@@ -76,6 +76,7 @@ npx tsx src/arena-perps-agent.ts close
 ```bash
 npx tsx src/arena-perps-agent.ts cancel
 ```
+Select multiple orders using arrow keys and spacebar, then confirm to cancel them all at once.
 
 ## Environment Variables
 

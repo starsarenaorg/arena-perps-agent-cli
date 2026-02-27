@@ -1,7 +1,7 @@
 import "dotenv/config";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { select, input as textInput, confirm } from "@inquirer/prompts";
+import { select, input as textInput, confirm, checkbox } from "@inquirer/prompts";
 import { config } from "./config.js";
 import { registerAgent } from "./onboarding/registerAgent.js";
 import { registerPerp } from "./onboarding/register.js";
@@ -826,8 +826,6 @@ async function cmdClose(): Promise<void> {
 }
 
 async function cmdCancel(): Promise<void> {
-  const rl = readline.createInterface({ input, output });
-
   try {
     console.log("\n── Cancel Order(s) ─────────────────────────────────");
 
@@ -838,50 +836,63 @@ async function cmdCancel(): Promise<void> {
     }
 
     console.log("\nOpen orders:");
-    orders.forEach((o) => console.log(formatOrder(o)));
 
-    const oidInput = (
-      await rl.question("\n  Enter order ID(s) to cancel (comma-separated): ")
-    ).trim();
+    // Small delay for rendering
+    await new Promise((r) => setTimeout(r, 500));
 
-    if (!oidInput) {
-      console.log("  Cancelled.");
+    // Let user select which orders to cancel directly from the list
+    const selectedOids = await checkbox({
+      message: "Select order(s) to cancel (space to select, enter to confirm):",
+      choices: orders.map((o) => {
+        const side = o.side === "B" ? "BUY " : "SELL";
+        const sz = parseFloat(o.sz).toFixed(4);
+        const px = parseFloat(o.limitPx).toFixed(1);
+        return {
+          name: `  ${o.coin.padEnd(12)} ${side}  oid=${o.oid}  sz=${sz}  px=${px}  reduceOnly=${o.reduceOnly}`,
+          value: o.oid,
+        };
+      }),
+      required: true,
+    });
+
+    if (selectedOids.length === 0) {
+      console.log("  No orders selected.");
       return;
     }
 
-    const oids = oidInput.split(",").map((s) => parseInt(s.trim(), 10));
-
-    const cancels = oids.map((oid) => {
-      const order = orders.find((o) => o.oid === oid);
-      if (!order) throw new Error(`Order ID ${oid} not found in open orders`);
-
-      const pairs = orders
-        .filter((o) => o.oid === oid)
-        .map((o) => o.coin);
-
-      return {
-        oid,
-        assetIndex: oid,
-        coin: pairs[0],
-      };
+    const confirmed = await confirm({
+      message: `Cancel ${selectedOids.length} order(s)?`,
+      default: true
     });
+
+    if (!confirmed) {
+      console.log("  Cancelled.");
+      return;
+    }
 
     console.log("→ Fetching asset indices...");
     const allPairs = await getAllPairs();
     const pairMap = new Map(allPairs.map((p) => [p.symbol, p]));
 
-    const cancelList = cancels.map((c) => {
-      const pair = pairMap.get(c.coin);
-      if (!pair) throw new Error(`Pair not found for coin: ${c.coin}`);
-      return { oid: c.oid, assetIndex: pair.baseAssetId };
+    const cancelList = selectedOids.map((oid) => {
+      const order = orders.find((o) => o.oid === oid);
+      if (!order) throw new Error(`Order ID ${oid} not found`);
+      
+      const pair = pairMap.get(order.coin);
+      if (!pair) throw new Error(`Pair not found for coin: ${order.coin}`);
+      
+      return { oid, assetIndex: pair.baseAssetId };
     });
 
-    console.log("→ Cancelling orders...");
+    console.log(`→ Cancelling ${cancelList.length} order(s)...`);
     const result = await cancelOrders(cancelList);
-    console.log("  ✓ Cancel result:");
-    console.log(JSON.stringify(result, null, 2));
-  } finally {
-    rl.close();
+    console.log(`  ✓ Successfully cancelled ${cancelList.length} order(s)`);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("User force closed")) {
+      console.log("\n  Cancelled.");
+      return;
+    }
+    throw error;
   }
 }
 
