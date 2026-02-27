@@ -32,18 +32,30 @@ export class HyperliquidClient {
     return response.json() as Promise<T>;
   }
 
-  async getClearinghouseState(userAddress: string): Promise<HlClearinghouseState> {
-    return this.post<HlClearinghouseState>({
+  async getClearinghouseState(userAddress: string, dex?: string): Promise<HlClearinghouseState> {
+    const body: Record<string, unknown> = {
       type: "clearinghouseState",
       user: userAddress,
-    });
+    };
+    
+    if (dex !== undefined) {
+      body.dex = dex;
+    }
+    
+    return this.post<HlClearinghouseState>(body);
   }
 
-  async getOpenOrders(userAddress: string): Promise<HlOpenOrder[]> {
-    return this.post<HlOpenOrder[]>({
+  async getOpenOrders(userAddress: string, dex?: string): Promise<HlOpenOrder[]> {
+    const body: Record<string, unknown> = {
       type: "openOrders",
       user: userAddress,
-    });
+    };
+    
+    if (dex !== undefined) {
+      body.dex = dex;
+    }
+    
+    return this.post<HlOpenOrder[]>(body);
   }
 
   async getAllMids(): Promise<HlMarketSnapshot[]> {
