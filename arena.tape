@@ -3,7 +3,7 @@ Output arena.gif
 Set FontSize 16
 Set Width 1200
 Set Height 600
-Set PlaybackSpeed 1.3
+Set PlaybackSpeed 2.5
 Set Theme { "name": "Custom Orange", "black": "#000000", "red": "#ff6b35", "green": "#00cc88", "yellow": "#ffb627", "blue": "#ff8c42", "magenta": "#ff6b35", "cyan": "#ffa500", "white": "#ffffff", "brightBlack": "#1a1a1a", "brightRed": "#ff8c42", "brightGreen": "#00ee99", "brightYellow": "#ffcc44", "brightBlue": "#ffa500", "brightMagenta": "#ff8c42", "brightCyan": "#ffb627", "brightWhite": "#ffffff", "background": "#000000", "foreground": "#ffa500", "selectionBackground": "#ff6b35", "cursorColor": "#ffa500" }
 
 # Deposit flow

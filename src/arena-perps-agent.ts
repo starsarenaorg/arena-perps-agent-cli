@@ -46,15 +46,8 @@ function formatPosition(ap: HlAssetPosition): string {
   const pnlStr = Math.abs(pnl).toFixed(2);
   const liqStr = p.liquidationPx ? parseFloat(p.liquidationPx).toFixed(0) : "N/A";
   
-  // Build without colors first to measure length
-  const plainText = `${p.coin.padEnd(6)} ${side} sz=${sizeStr} @$${entryStr} pnl=${pnlSign}$${pnlStr} liq=$${liqStr}`;
-  
-  // Build with colors
-  const coloredText = `${p.coin.padEnd(6)} ${sideColor}${side}${reset} sz=${sizeStr} @$${entryStr} ${pnlColor}pnl=${pnlSign}$${pnlStr}${reset} liq=$${liqStr}`;
-  
-  // Pad to 65 characters (plain text length) to fit in box
-  const padding = 65 - plainText.length;
-  return coloredText + " ".repeat(Math.max(0, padding));
+  // Simple format without padding constraints
+  return `${p.coin.padEnd(6)} ${sideColor}${side}${reset} sz=${sizeStr} @$${entryStr} ${pnlColor}pnl=${pnlSign}$${pnlStr}${reset} liq=$${liqStr}`;
 }
 
 function formatOrder(o: HlOpenOrder): string {
@@ -291,45 +284,42 @@ async function cmdPositions(): Promise<void> {
   const totalNotional = parseFloat(ms.totalNtlPos);
   const withdrawable = parseFloat(state.withdrawable);
 
-  // Calculate exact padding to match 73-char box width (│ + 71 chars + │)
-  // Format: "│  Label (20)       │  $Value USDC (49 chars)                    │"
+  // Simple format without side borders
   const formatLine = (label: string, value: number, hasColor = false) => {
     const labelPart = label.padEnd(18);
     const valuePart = `$${value.toFixed(2)} USDC`;
-    const padding = 49 - valuePart.length;
-    const spaces = " ".repeat(Math.max(0, padding));
     
     if (hasColor) {
-      return `│  ${labelPart}│  \x1b[32m${valuePart}\x1b[0m${spaces}│`;
+      return `  ${labelPart}  \x1b[32m${valuePart}\x1b[0m`;
     }
-    return `│  ${labelPart}│  ${valuePart}${spaces}│`;
+    return `  ${labelPart}  ${valuePart}`;
   };
 
-  console.log("\n┌─────────────────────────────────────────────────────────────────────┐");
-  console.log("│  💰 Account Summary                                                 │");
-  console.log("├─────────────────────────────────────────────────────────────────────┤");
+  console.log("\n─────────────────────────────────────────────────────────────────────");
+  console.log("  💰 Account Summary");
+  console.log("─────────────────────────────────────────────────────────────────────");
   console.log(formatLine("Account Value", accountValue));
   console.log(formatLine("Margin Used", marginUsed));
   console.log(formatLine("Total Notional", totalNotional));
   console.log(formatLine("Withdrawable", withdrawable, true));
-  console.log("└─────────────────────────────────────────────────────────────────────┘");
+  console.log("─────────────────────────────────────────────────────────────────────");
 
   const positions = state.assetPositions.filter(
     (ap) => parseFloat(ap.position.szi) !== 0
   );
 
   if (positions.length === 0) {
-    console.log("\n┌─────────────────────────────────────────────────────────────────────┐");
-    console.log("│  📭 No open positions                                               │");
-    console.log("└─────────────────────────────────────────────────────────────────────┘\n");
+    console.log("\n─────────────────────────────────────────────────────────────────────");
+    console.log("  📭 No open positions");
+    console.log("─────────────────────────────────────────────────────────────────────\n");
   } else {
-    console.log(`\n┌─────────────────────────────────────────────────────────────────────┐`);
-    console.log(`│  📈 Open Positions (${positions.length})                                               │`);
-    console.log("├─────────────────────────────────────────────────────────────────────┤");
+    console.log(`\n─────────────────────────────────────────────────────────────────────`);
+    console.log(`  📈 Open Positions (${positions.length})`);
+    console.log("─────────────────────────────────────────────────────────────────────");
     positions.forEach((ap) => {
-      console.log(`│  ${formatPosition(ap)}  │`);
+      console.log(`  ${formatPosition(ap)}`);
     });
-    console.log("└─────────────────────────────────────────────────────────────────────┘\n");
+    console.log("─────────────────────────────────────────────────────────────────────\n");
   }
 }
 
