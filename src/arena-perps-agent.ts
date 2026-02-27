@@ -506,9 +506,13 @@ async function cmdTrade(): Promise<void> {
 
     // Handle scale orders differently
     if (orderType === "scale") {
+      const pair = allPairs.find(p => p.symbol === symbol)!;
       await handleScaleOrder(symbol, pair, direction);
       return;
     }
+
+    // Get the pair for regular orders
+    const pair = allPairs.find(p => p.symbol === symbol)!;
 
     let price: number;
     
