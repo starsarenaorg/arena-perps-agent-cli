@@ -15,27 +15,37 @@ Sleep 3s
 Type "npx tsx src/arena-perps-agent.ts trade"
 Sleep 500ms
 Enter
-Sleep 2s
+Sleep 3s
 
-# Select market (BTC)
+# Select market (BTC) - browse through markets slowly
 Down
-Sleep 200ms
+Sleep 800ms
 Down
-Sleep 200ms
+Sleep 800ms
+Down
+Sleep 800ms
 Up
-Sleep 200ms
+Sleep 800ms
+Up
+Sleep 800ms
+Up
+Sleep 500ms
 Enter
-Sleep 1s
+Sleep 1.5s
 
 # Select direction (Long)
+Sleep 800ms
+Down
 Sleep 500ms
+Up
+Sleep 300ms
 Enter
-Sleep 1s
+Sleep 1.5s
 
 # Select order type (Market)
-Sleep 500ms
+Sleep 800ms
 Enter
-Sleep 2s
+Sleep 2.5s
 
 # Enter margin (10 USDC)
 Type "10"
@@ -58,19 +68,29 @@ Sleep 1s
 Type "y"
 Sleep 500ms
 Enter
-Sleep 1s
+Sleep 1.5s
 
-# Take profit selection - choose +25%
+# Take profit selection - browse options slowly
+Sleep 500ms
 Down
-Sleep 200ms
+Sleep 600ms
+Down
+Sleep 600ms
+Up
+Sleep 400ms
 Enter
-Sleep 1s
+Sleep 1.5s
 
-# Stop loss selection - choose -10%
+# Stop loss selection - browse options slowly
+Sleep 500ms
 Down
-Sleep 200ms
+Sleep 600ms
+Down
+Sleep 600ms
+Up
+Sleep 400ms
 Enter
-Sleep 1s
+Sleep 1.5s
 
 # Confirm the order
 Sleep 1s
@@ -89,17 +109,17 @@ Sleep 3s
 Type "npx tsx src/arena-perps-agent.ts close"
 Sleep 500ms
 Enter
-Sleep 2s
+Sleep 2.5s
 
 # Select the position (first one)
-Sleep 500ms
+Sleep 800ms
 Enter
-Sleep 1s
+Sleep 1.5s
 
 # Close percent (100%)
-Sleep 500ms
+Sleep 800ms
 Enter
-Sleep 1s
+Sleep 1.5s
 
 # Confirm close
 Type "y"
