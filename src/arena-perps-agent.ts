@@ -304,9 +304,9 @@ async function cmdPositions(): Promise<void> {
   console.log(formatLine("Withdrawable", withdrawable, true));
   console.log("─────────────────────────────────────────────────────────────────────");
 
-  const positions = state.assetPositions.filter(
-    (ap) => parseFloat(ap.position.szi) !== 0
-  );
+  // Get positions from ALL DEXs
+  console.log("\n→ Fetching positions from all DEXs...");
+  const positions = await getPositions();
 
   if (positions.length === 0) {
     console.log("\n─────────────────────────────────────────────────────────────────────");
