@@ -645,7 +645,7 @@ async function cmdClose(): Promise<void> {
 
     const selectedPosition = positions[selection];
     const p = selectedPosition.position;
-    const symbol = p.coin.toUpperCase();
+    const symbol = p.coin; // Keep original case for XYZ markets
     const size = Math.abs(parseFloat(p.szi));
     const positionSide = parseFloat(p.szi) > 0 ? "long" : "short";
 
