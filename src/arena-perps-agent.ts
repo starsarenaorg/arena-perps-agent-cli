@@ -36,12 +36,17 @@ function formatPosition(ap: HlAssetPosition): string {
   const side = size > 0 ? "LONG" : "SHORT";
   const pnl = parseFloat(p.unrealizedPnl);
   const pnlSign = pnl >= 0 ? "+" : "";
+  const pnlColor = pnl >= 0 ? "\x1b[32m" : "\x1b[31m"; // Green or Red
+  const sideColor = size > 0 ? "\x1b[32m" : "\x1b[31m";
+  const reset = "\x1b[0m";
+  
   return [
-    `  ${p.coin.padEnd(12)} ${side.padEnd(6)}`,
-    `size=${Math.abs(size)}`,
-    `entry=${p.entryPx}`,
-    `pnl=${pnlSign}${pnl.toFixed(2)} USDC`,
-    `liq=${p.liquidationPx ?? "N/A"}`,
+    `  ${p.coin.padEnd(8)}`,
+    `${sideColor}${side.padEnd(6)}${reset}`,
+    `size=${Math.abs(size).toFixed(6)}`,
+    `entry=$${parseFloat(p.entryPx).toLocaleString()}`,
+    `${pnlColor}pnl=${pnlSign}$${Math.abs(pnl).toFixed(2)}${reset}`,
+    `liq=${p.liquidationPx ? "$" + parseFloat(p.liquidationPx).toLocaleString() : "N/A"}`,
   ].join("  ");
 }
 
@@ -266,25 +271,44 @@ async function cmdPairs(filter?: string): Promise<void> {
 }
 
 async function cmdPositions(): Promise<void> {
-  console.log("→ Fetching positions...");
+  console.log("\n╔══════════════════════════════════════════════════════════════════════╗");
+  console.log("║                         📊 POSITIONS                                 ║");
+  console.log("╚══════════════════════════════════════════════════════════════════════╝\n");
+  
+  console.log("→ Fetching account state...");
   const state = await getClearinghouseState();
   const ms = state.marginSummary;
 
-  console.log("\nAccount summary:");
-  console.log(`  Account value:    ${parseFloat(ms.accountValue).toFixed(2)} USDC`);
-  console.log(`  Margin used:      ${parseFloat(ms.totalMarginUsed).toFixed(2)} USDC`);
-  console.log(`  Total notional:   ${parseFloat(ms.totalNtlPos).toFixed(2)} USDC`);
-  console.log(`  Withdrawable:     ${parseFloat(state.withdrawable).toFixed(2)} USDC`);
+  const accountValue = parseFloat(ms.accountValue);
+  const marginUsed = parseFloat(ms.totalMarginUsed);
+  const totalNotional = parseFloat(ms.totalNtlPos);
+  const withdrawable = parseFloat(state.withdrawable);
+
+  console.log("\n┌─────────────────────────────────────────────────────────────────────┐");
+  console.log("│  💰 Account Summary                                                 │");
+  console.log("├─────────────────────────────────────────────────────────────────────┤");
+  console.log(`│  Account Value    │  $${accountValue.toFixed(2).padStart(10)} USDC                        │`);
+  console.log(`│  Margin Used      │  $${marginUsed.toFixed(2).padStart(10)} USDC                        │`);
+  console.log(`│  Total Notional   │  $${totalNotional.toFixed(2).padStart(10)} USDC                        │`);
+  console.log(`│  Withdrawable     │  \x1b[32m$${withdrawable.toFixed(2).padStart(10)}\x1b[0m USDC                        │`);
+  console.log("└─────────────────────────────────────────────────────────────────────┘");
 
   const positions = state.assetPositions.filter(
     (ap) => parseFloat(ap.position.szi) !== 0
   );
 
   if (positions.length === 0) {
-    console.log("\nNo open positions.");
+    console.log("\n┌─────────────────────────────────────────────────────────────────────┐");
+    console.log("│  📭 No open positions                                               │");
+    console.log("└─────────────────────────────────────────────────────────────────────┘\n");
   } else {
-    console.log(`\nOpen positions (${positions.length}):`);
-    positions.forEach((ap) => console.log(formatPosition(ap)));
+    console.log(`\n┌─────────────────────────────────────────────────────────────────────┐`);
+    console.log(`│  📈 Open Positions (${positions.length})                                               │`);
+    console.log("├─────────────────────────────────────────────────────────────────────┤");
+    positions.forEach((ap) => {
+      console.log(`│  ${formatPosition(ap).padEnd(69)}│`);
+    });
+    console.log("└─────────────────────────────────────────────────────────────────────┘\n");
   }
 }
 
