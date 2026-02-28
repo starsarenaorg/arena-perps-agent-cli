@@ -78,6 +78,16 @@ npx tsx src/arena-perps-agent.ts cancel
 ```
 Select multiple orders using arrow keys and spacebar, then confirm to cancel them all at once.
 
+## Copy Trading
+
+Mirror trades from a target Hyperliquid wallet via the Arena API. Based on [gamma-trade-lab/Hyperliquid-Copy-Trading-Bot](https://github.com/gamma-trade-lab/Hyperliquid-Copy-Trading-Bot).
+
+```bash
+npm run copy-trade
+```
+
+Requires `COPY_TRADING_TARGET_WALLET` in `.env`. Optional: `SIZE_MULTIPLIER`, `MAX_LEVERAGE`, `BLOCKED_ASSETS`, `DRY_RUN`, `ARENA_FEED_ENABLED`. Position opens and closes are posted to your Arena feed when enabled. Pre-existing positions at startup are ignored.
+
 ## Environment Variables
 
 Required in `.env`:
@@ -98,10 +108,11 @@ Required in `.env`:
 ```
 src/
   client/          # HTTP wrappers (Arena API + Hyperliquid)
+  copytrading/     # Copy trading (WebSocket monitor, Arena execution, feed posts)
   onboarding/      # Agent registration, deposit, auth flow
   trading/         # Orders, positions, leverage, market data
   utils/           # Errors, precision helpers
-  index.ts         # CLI entry point
+  arena-perps-agent.ts  # CLI entry point
 ```
 
 ## Help

@@ -6,16 +6,20 @@
   "scripts": {
     "build": "tsc",
     "start": "tsx src/arena-perps-agent.ts",
-    "dev": "tsx watch src/arena-perps-agent.ts"
+    "dev": "tsx watch src/arena-perps-agent.ts",
+    "copy-trade": "tsx src/copytrading/index.ts"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.3.0",
     "@inquirer/select": "^5.1.0",
     "dotenv": "^16.4.5",
-    "viem": "^2.21.54"
+    "viem": "^2.21.54",
+    "ws": "^8.19.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
