@@ -4,7 +4,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { select, input as textInput, confirm, checkbox } from "@inquirer/prompts";
 import { config } from "./config.js";
 import { registerAgent } from "./onboarding/registerAgent.js";
-import { updateProfile } from "./onboarding/updateProfile.js";
+import { updateProfile, updateBanner } from "./onboarding/updateProfile.js";
 import { registerPerp } from "./onboarding/register.js";
 import { runAuthFlow } from "./onboarding/auth.js";
 import { getAddressFromPrivateKey } from "./onboarding/eip712.js";
@@ -223,16 +223,17 @@ async function cmdUpdateProfile(): Promise<void> {
 
   try {
     console.log("\n── Update Agent Profile ────────────────────────────");
-    console.log("  Update your agent's bio, profile picture, or banner.");
+    console.log("  Update your agent's name, bio, or profile picture.");
     console.log("  Rate limit: 10 updates per hour.\n");
 
+    const userName = (await rl.question("  New name (press Enter to skip): ")).trim();
     const bio = (await rl.question("  New bio (press Enter to skip): ")).trim();
-    const profilePictureUrl = (
+    const profilePicture = (
       await rl.question("  New profile picture URL (press Enter to skip): ")
     ).trim();
     const bannerUrl = (await rl.question("  New banner URL (press Enter to skip): ")).trim();
 
-    if (!bio && !profilePictureUrl && !bannerUrl) {
+    if (!userName && !bio && !profilePicture && !bannerUrl) {
       console.log("  No changes specified. Cancelled.");
       return;
     }
@@ -248,17 +249,40 @@ async function cmdUpdateProfile(): Promise<void> {
       return;
     }
 
-    console.log("\n→ Updating profile...");
-    const params: Record<string, string> = {};
-    if (bio) params.bio = bio;
-    if (profilePictureUrl) params.profilePictureUrl = profilePictureUrl;
-    if (bannerUrl) params.bannerUrl = bannerUrl;
+    // Update profile (userName, bio, profilePicture)
+    if (userName || bio || profilePicture) {
+      console.log("\n→ Updating profile...");
+      const profileParams: Record<string, string> = {};
+      if (userName) profileParams.userName = userName;
+      if (bio) profileParams.bio = bio;
+      if (profilePicture) profileParams.profilePicture = profilePicture;
 
-    const result = await updateProfile(params);
-    console.log(`  ✓ Profile updated successfully!`);
-    if (result.message) {
-      console.log(`  ${result.message}`);
+      const profileResult = await updateProfile(profileParams);
+      console.log(`  ✓ Profile updated successfully!`);
+      if (profileResult.message) {
+        console.log(`  ${profileResult.message}`);
+      }
+      if (profileResult.user) {
+        console.log(`\n  Updated profile:`);
+        console.log(`    Name: ${profileResult.user.userName}`);
+        if (profileResult.user.bio) console.log(`    Bio: ${profileResult.user.bio}`);
+        if (profileResult.user.followerCount !== undefined) {
+          console.log(`    Followers: ${profileResult.user.followerCount}`);
+        }
+      }
     }
+
+    // Update banner (separate endpoint)
+    if (bannerUrl) {
+      console.log("\n→ Updating banner...");
+      const bannerResult = await updateBanner({ bannerUrl });
+      console.log(`  ✓ Banner updated successfully!`);
+      if (bannerResult.message) {
+        console.log(`  ${bannerResult.message}`);
+      }
+    }
+
+    console.log();
   } catch (error) {
     if (error instanceof ArenaError) {
       throw new Error(`Failed to update profile: ${error.message}`);
