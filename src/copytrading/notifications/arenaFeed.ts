@@ -63,7 +63,16 @@ export async function sendTradeNotification(
 ): Promise<void> {
   if (!result.success) return;
   const action = params.reduceOnly ? "close" : "open";
-  const sideText = params.side === "B" ? "Long" : "Short";
+  
+  // For opens: use order side. For closes: use fill direction to determine original position
+  let sideText: string;
+  if (action === "open") {
+    sideText = params.side === "B" ? "Long" : "Short";
+  } else {
+    // For closes, extract from fill.dir: "Close Long" or "Close Short"
+    sideText = fill.dir.includes("Long") ? "Long" : "Short";
+  }
+  
   const price = parseFloat(fill.px);
   const size = params.size;
   const notional = price * parseFloat(size);

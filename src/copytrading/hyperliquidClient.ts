@@ -137,7 +137,10 @@ export class HyperliquidClientWrapper {
       loggerUtils.logTrade("info", "Placing order", params);
 
       if (params.reduceOnly) {
-        const positionSide = direction === "long" ? "long" : "short";
+        // For closes: invert the side logic
+        // params.side "A" (sell) = closing a long position
+        // params.side "B" (buy) = closing a short position
+        const positionSide = params.side === "A" ? "long" : "short";
         const res = await closePosition({
           symbol,
           positionSide,
@@ -167,6 +170,12 @@ export class HyperliquidClientWrapper {
         leverage: params.leverage,
         price,
       });
+      
+      // Log the response for debugging
+      logger.info("Arena placeOrder response", { 
+        response: JSON.stringify(res, null, 2).substring(0, 1000) 
+      });
+      
       const oid = this.extractOrderId(res);
       if (!oid) throw new TradingError("Order placed but no order ID returned", true, { params });
 
@@ -191,9 +200,56 @@ export class HyperliquidClientWrapper {
   }
 
   private extractOrderId(res: unknown): number | undefined {
-    const r = res as { response?: { data?: { statuses?: Array<{ filled?: { oid?: number } }> } } };
-    const filled = r?.response?.data?.statuses?.[0]?.filled;
-    return filled?.oid;
+    // Log with full depth to see nested structure (using info level so it shows)
+    logger.info("Extracting order ID from Arena response", { 
+      responsePreview: JSON.stringify(res, null, 2).substring(0, 800)
+    });
+    
+    const r = res as any;
+    
+    // Arena API returns an array: [{ status: 'ok', response: {...} }]
+    if (Array.isArray(r) && r.length > 0) {
+      const firstResult = r[0];
+      
+      // Check if it's a successful response
+      if (firstResult.status === 'ok' && firstResult.response) {
+        const responseData = firstResult.response;
+        
+        // Try: response.data.statuses[0].filled.oid
+        if (responseData.data?.statuses?.[0]?.filled?.oid) {
+          return responseData.data.statuses[0].filled.oid;
+        }
+        
+        // Try: response.statuses[0].filled.oid
+        if (responseData.statuses?.[0]?.filled?.oid) {
+          return responseData.statuses[0].filled.oid;
+        }
+        
+        // Try: response.oid
+        if (responseData.oid) {
+          return responseData.oid;
+        }
+        
+        // For market orders that fill immediately, try other paths
+        if (responseData.data?.oid) {
+          return responseData.data.oid;
+        }
+      }
+    }
+    
+    // Fallback to old logic for non-array responses
+    if (r?.response?.data?.statuses?.[0]?.filled?.oid) {
+      return r.response.data.statuses[0].filled.oid;
+    }
+    
+    if (r?.data?.statuses?.[0]?.filled?.oid) {
+      return r.data.statuses[0].filled.oid;
+    }
+    
+    logger.warn("Could not extract order ID from response", { 
+      response: JSON.stringify(res, null, 2).substring(0, 500) 
+    });
+    return undefined;
   }
 
   async subscribeToUserFills(
