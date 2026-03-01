@@ -4,6 +4,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { select, input as textInput, confirm, checkbox } from "@inquirer/prompts";
 import { config } from "./config.js";
 import { registerAgent } from "./onboarding/registerAgent.js";
+import { updateProfile } from "./onboarding/updateProfile.js";
 import { registerPerp } from "./onboarding/register.js";
 import { runAuthFlow } from "./onboarding/auth.js";
 import { getAddressFromPrivateKey } from "./onboarding/eip712.js";
@@ -212,6 +213,57 @@ async function cmdDeposit(): Promise<void> {
       "\n  Wait a few minutes for Hyperliquid to credit your account."
     );
     console.log("  Then run: npx tsx src/index.ts onboard\n");
+  } finally {
+    rl.close();
+  }
+}
+
+async function cmdUpdateProfile(): Promise<void> {
+  const rl = readline.createInterface({ input, output });
+
+  try {
+    console.log("\n── Update Agent Profile ────────────────────────────");
+    console.log("  Update your agent's bio, profile picture, or banner.");
+    console.log("  Rate limit: 10 updates per hour.\n");
+
+    const bio = (await rl.question("  New bio (press Enter to skip): ")).trim();
+    const profilePictureUrl = (
+      await rl.question("  New profile picture URL (press Enter to skip): ")
+    ).trim();
+    const bannerUrl = (await rl.question("  New banner URL (press Enter to skip): ")).trim();
+
+    if (!bio && !profilePictureUrl && !bannerUrl) {
+      console.log("  No changes specified. Cancelled.");
+      return;
+    }
+
+    const confirm = (
+      await rl.question(`\n  Update profile? [y/N]: `)
+    )
+      .trim()
+      .toLowerCase();
+
+    if (confirm !== "y") {
+      console.log("  Cancelled.");
+      return;
+    }
+
+    console.log("\n→ Updating profile...");
+    const params: Record<string, string> = {};
+    if (bio) params.bio = bio;
+    if (profilePictureUrl) params.profilePictureUrl = profilePictureUrl;
+    if (bannerUrl) params.bannerUrl = bannerUrl;
+
+    const result = await updateProfile(params);
+    console.log(`  ✓ Profile updated successfully!`);
+    if (result.message) {
+      console.log(`  ${result.message}`);
+    }
+  } catch (error) {
+    if (error instanceof ArenaError) {
+      throw new Error(`Failed to update profile: ${error.message}`);
+    }
+    throw error;
   } finally {
     rl.close();
   }
@@ -909,16 +961,17 @@ Arena Perpetuals Trading Agent
 Usage: npx tsx src/index.ts <command>
 
 Commands:
-  register      Create a new Arena agent account (run this first)
-  deposit       Fund Hyperliquid account with USDC from Arbitrum
-  onboard       Run the one-time Hyperliquid authorization flow
-  pairs [query] List available trading pairs (optional symbol filter)
-  positions     Show open positions and account summary
-  orders        Show open orders
-  trade         Interactive order placement (market/limit/scale)
-  close         Interactive position close wizard
-  cancel        Interactive order cancellation
-  help          Show this help message
+  register         Create a new Arena agent account (run this first)
+  update-profile   Update agent bio, profile picture, and banner
+  deposit          Fund Hyperliquid account with USDC from Arbitrum
+  onboard          Run the one-time Hyperliquid authorization flow
+  pairs [query]    List available trading pairs (optional symbol filter)
+  positions        Show open positions and account summary
+  orders           Show open orders
+  trade            Interactive order placement (market/limit/scale)
+  close            Interactive position close wizard
+  cancel           Interactive order cancellation
+  help             Show this help message
 
 Environment variables (copy .env.example to .env):
   ARENA_API_KEY             Your Arena API key (required)
@@ -937,6 +990,9 @@ async function main(): Promise<void> {
     switch (command) {
       case "register":
         await cmdRegisterAgent();
+        break;
+      case "update-profile":
+        await cmdUpdateProfile();
         break;
       case "deposit":
         await cmdDeposit();
