@@ -19,13 +19,14 @@ import {
   retryWithBackoff,
 } from "./utils/errors.js";
 import type { AccountEquity, Position, FillEvent } from "./types.js";
+import type WsWebSocket from "ws";
 
 const WS_URL = "wss://api.hyperliquid.xyz/ws";
 
 export class HyperliquidClientWrapper {
   private readonly ourAddress: string;
   private readonly ignoredCoins = new Set<string>();
-  private ws: WebSocket | null = null;
+  private ws: WsWebSocket | null = null;
   private isConnected = false;
   private pingInterval: NodeJS.Timeout | null = null;
 

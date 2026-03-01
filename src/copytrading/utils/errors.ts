@@ -35,10 +35,9 @@ export class NetworkError extends AppError {
   }
 }
 
-export class WebSocketError extends NetworkError {
+export class WebSocketError extends AppError {
   constructor(message: string, context?: Record<string, unknown>) {
-    super(message, { ...context, type: "websocket" });
-    this.code = "WEBSOCKET_ERROR";
+    super(message, "WEBSOCKET_ERROR", true, { ...context, type: "websocket" });
   }
 }
 

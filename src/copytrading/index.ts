@@ -37,7 +37,7 @@ async function main(): Promise<void> {
     await client.initialize();
 
     const ourAddress = client.getAddress();
-    logger.info("Our wallet address:", ourAddress);
+    logger.info("Our wallet address", { address: ourAddress });
 
     try {
       const ourEquity = await client.getAccountEquity(ourAddress);
