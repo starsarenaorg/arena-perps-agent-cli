@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  arena-copy-trader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arena-copy-trader
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    # Uncomment if you want to see logs
+    # logging:
+    #   driver: "json-file"
+    #   options:
+    #     max-size: "10m"
+    #     max-file: "3"
+    # Uncomment for health checks
+    # healthcheck:
+    #   test: ["CMD", "node", "-e", "process.exit(0)"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s

@@ -1,0 +1,97 @@
+[2026-02-28T00:12:12.103Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T00:12:12.106Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T00:20:02.410Z] [INFO] [executor] Shutting down executor...
+[2026-02-28T00:20:02.412Z] [INFO] [executor] Closing all bot-opened positions...
+[2026-02-28T00:20:02.412Z] [INFO] [executor] Closed 0 position(s)
+[2026-02-28T00:20:02.424Z] [INFO] [executor] Database cleanup complete
+[2026-02-28T00:20:02.424Z] [INFO] [executor] Executor shutdown complete
+[2026-02-28T00:24:44.009Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T00:24:44.013Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T00:25:08.960Z] [INFO] [executor] BTC: targetMargin=$4.96, ourMargin=$2.41, leverage=9x
+[2026-02-28T00:25:08.960Z] [TRADE] [executor] Placing LIMIT long BTC: size=0.00029, price=72576
+[2026-02-28T00:25:09.263Z] [INFO] [executor] BTC: targetMargin=$4.97, ourMargin=$2.42, leverage=8x
+[2026-02-28T00:25:09.264Z] [TRADE] [executor] Placing MARKET long BTC: size=0.00029, price~65851.5
+[2026-02-28T00:25:10.247Z] [INFO] [executor] Limit order placed for BTC
+[2026-02-28T00:25:10.484Z] [INFO] [executor] Market order placed for BTC
+[2026-02-28T00:25:44.634Z] [ERROR] [executor] Failed to execute intent f5d3f369-c143-486d-bc3d-4ddff14d9441: TP/SL order missing tpsl field for BTC
+[2026-02-28T00:25:50.647Z] [ERROR] [executor] Failed to execute intent 29d4e0f2-fa63-4466-a1c1-667ce7d55645: TP/SL order missing tpsl field for BTC
+[2026-02-28T00:27:07.293Z] [ERROR] [executor] Failed to execute intent 42fbd9d1-9d94-48ac-b5bb-16e7d0462a49: TP/SL order missing tpsl field for BTC
+[2026-02-28T00:27:08.619Z] [INFO] [executor] BTC: targetMargin=$n/a, ourMargin=$1.91, leverage=10x
+[2026-02-28T00:27:08.620Z] [TRADE] [executor] Placing MARKET short BTC: size=0.00029, price~65804.5
+[2026-02-28T00:27:10.577Z] [INFO] [executor] Market order placed for BTC
+[2026-02-28T00:29:38.626Z] [INFO] [executor] Shutting down executor - closing all open positions...
+[2026-02-28T00:29:38.630Z] [INFO] [executor] Shutting down executor - closing all open positions...
+[2026-02-28T00:29:39.161Z] [INFO] [executor] Found 0 open position(s) to close
+[2026-02-28T00:29:39.162Z] [INFO] [executor] No open positions to close
+[2026-02-28T00:29:39.163Z] [INFO] [executor] Executor shutdown complete
+[2026-02-28T00:30:53.660Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T00:30:53.665Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T00:31:03.473Z] [INFO] [executor] BTC: targetMargin=$4.96, ourMargin=$2.41, leverage=9x
+[2026-02-28T00:31:03.474Z] [TRADE] [executor] Placing LIMIT long BTC: size=0.00029, price=72304
+[2026-02-28T00:31:05.160Z] [INFO] [executor] Limit order placed for BTC
+[2026-02-28T01:01:51.149Z] [INFO] [executor] Shutting down executor - closing all open positions...
+[2026-02-28T01:01:51.155Z] [INFO] [executor] Shutting down executor - closing all open positions...
+[2026-02-28T01:01:51.464Z] [INFO] [executor] Found 1 open position(s) to close
+[2026-02-28T01:01:51.473Z] [INFO] [executor] Found 1 open position(s) to close
+[2026-02-28T01:01:56.247Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T01:01:56.251Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T01:02:01.884Z] [INFO] [executor] Shutting down executor - closing all open positions...
+[2026-02-28T01:02:01.889Z] [INFO] [executor] Shutting down executor - closing all open positions...
+[2026-02-28T01:02:02.252Z] [INFO] [executor] Found 1 open position(s) to close
+[2026-02-28T01:02:02.387Z] [INFO] [executor] Found 1 open position(s) to close
+[2026-02-28T01:02:02.955Z] [INFO] [executor] Closing long BTC (size=0.00029)...
+[2026-02-28T01:02:02.974Z] [INFO] [executor] Closing long BTC (size=0.00029)...
+[2026-02-28T01:02:03.739Z] [ERROR] [executor] Failed to close BTC: [ArenaError 400] INVALID_ORDER_PARAMS: Invalid close position payload: size must be greater than zero
+  Resolution: Set size to a value greater than zero and retry.
+[2026-02-28T01:02:03.742Z] [INFO] [executor] Deleted: /Users/dogusural/Desktop/workspace/arena-perps-trading-agent/data/copytrading.db
+[2026-02-28T01:02:03.742Z] [INFO] [executor] Executor shutdown complete
+[2026-02-28T01:02:12.522Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T01:02:12.527Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T01:02:18.324Z] [INFO] [executor] Shutting down executor - closing all open positions...
+[2026-02-28T01:02:18.327Z] [INFO] [executor] Shutting down executor - closing all open positions...
+[2026-02-28T01:02:18.658Z] [INFO] [executor] Found 1 open position(s) to close
+[2026-02-28T01:02:18.663Z] [INFO] [executor] Found 1 open position(s) to close
+[2026-02-28T01:02:18.940Z] [INFO] [executor] Closing long BTC (size=0.00029)...
+[2026-02-28T01:02:18.975Z] [INFO] [executor] Closing long BTC (size=0.00029)...
+[2026-02-28T01:02:19.690Z] [ERROR] [executor] Failed to close BTC: [ArenaError 400] INVALID_ORDER_PARAMS: Invalid close position payload: size must be greater than zero
+  Resolution: Set size to a value greater than zero and retry.
+[2026-02-28T01:02:19.694Z] [INFO] [executor] Deleted: /Users/dogusural/Desktop/workspace/arena-perps-trading-agent/data/copytrading.db
+[2026-02-28T01:02:19.694Z] [INFO] [executor] Executor shutdown complete
+[2026-02-28T01:08:05.129Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T01:08:05.133Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T01:08:45.796Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T01:08:45.801Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T01:08:59.599Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T01:08:59.603Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T01:09:13.653Z] [TRADE] [executor] Placing LIMIT short BTC: size=0.00029, price=59241
+[2026-02-28T01:09:14.012Z] [TRADE] [executor] Placing MARKET short BTC: size=0.00029, price~65820.5
+[2026-02-28T01:09:15.693Z] [INFO] [executor] Limit order placed for BTC
+[2026-02-28T01:09:15.695Z] [INFO] [executor] Market order placed for BTC
+[2026-02-28T01:09:29.171Z] [TRADE] [executor] Placing LIMIT long BTC: size=0.00029, price=72403
+[2026-02-28T01:09:29.964Z] [TRADE] [executor] Placing MARKET long BTC: size=0.00029, price~65819.5
+[2026-02-28T01:09:31.023Z] [INFO] [executor] Limit order placed for BTC
+[2026-02-28T01:09:34.625Z] [INFO] [executor] Market order placed for BTC
+[2026-02-28T01:29:42.192Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T01:29:42.197Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T01:30:08.888Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T01:30:08.891Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T01:30:48.718Z] [TRADE] [executor] Placing LIMIT short BTC: size=0.00029, price=59226
+[2026-02-28T01:30:51.613Z] [INFO] [executor] Limit order placed for BTC
+[2026-02-28T01:56:57.110Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T01:56:57.112Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T01:57:13.363Z] [TRADE] [executor] Placing LIMIT long BTC: size=0.00029, price=72362
+[2026-02-28T01:57:14.717Z] [INFO] [executor] Limit order placed for BTC
+[2026-02-28T01:57:49.507Z] [TRADE] [executor] Placing MARKET short BTC: size=0.00029, price~65782.5
+[2026-02-28T01:57:55.063Z] [INFO] [executor] Market order placed for BTC
+[2026-02-28T02:03:38.878Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T02:03:38.880Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T02:04:14.392Z] [TRADE] [executor] Placing LIMIT long BTC: size=0.00029, price=72319, margin=2.4080, lev~9x
+[2026-02-28T02:04:16.506Z] [INFO] [executor] Limit order placed for BTC
+[2026-02-28T02:11:53.550Z] [INFO] [executor] Starting executor for target wallet: 0x218641112A3E60B39f765EC5F7315A68A2cABC7d
+[2026-02-28T02:11:53.553Z] [INFO] [executor] Executor running. Polling for PENDING intents...
+[2026-02-28T02:12:09.615Z] [TRADE] [executor] Placing MARKET short BTC: size=0.00029, price~65867.5, margin=19.1016, lev~1x
+[2026-02-28T02:12:11.412Z] [INFO] [executor] Market order placed for BTC
+[2026-02-28T02:12:35.309Z] [TRADE] [executor] Placing LIMIT long BTC: size=0.00029, price=72478, margin=2.5972, lev~8x
+[2026-02-28T02:12:39.794Z] [INFO] [executor] Limit order placed for BTC
+[2026-02-28T02:12:54.162Z] [TRADE] [executor] Placing MARKET short BTC: size=0.00029, price~65889.5, margin=19.1080, lev~1x
+[2026-02-28T02:12:55.997Z] [INFO] [executor] Market order placed for BTC

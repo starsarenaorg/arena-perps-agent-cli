@@ -82,8 +82,21 @@ Select multiple orders using arrow keys and spacebar, then confirm to cancel the
 
 Mirror trades from a target Hyperliquid wallet via the Arena API. Based on [gamma-trade-lab/Hyperliquid-Copy-Trading-Bot](https://github.com/gamma-trade-lab/Hyperliquid-Copy-Trading-Bot).
 
+### Run with Node:
 ```bash
 npm run copy-trade
+```
+
+### Run with Docker:
+```bash
+# Build and start
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
 ```
 
 Requires `COPY_TRADING_TARGET_WALLET` in `.env`. Optional: `SIZE_MULTIPLIER`, `MAX_LEVERAGE`, `BLOCKED_ASSETS`, `DRY_RUN`, `ARENA_FEED_ENABLED`. Position opens and closes are posted to your Arena feed when enabled. Pre-existing positions at startup are ignored.

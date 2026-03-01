@@ -1,0 +1,33 @@
+# Docker
+node_modules
+npm-debug.log
+dist
+.env
+.env.*
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.cursor
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+README.md
+.prettierrc
+.eslintrc
+tsconfig.json
