@@ -88,6 +88,8 @@ npm run copy-trade
 ```
 
 ### Run with Docker:
+
+**Option 1: Using Docker Compose (if installed):**
 ```bash
 # Build and start
 docker-compose up -d
@@ -97,6 +99,26 @@ docker-compose logs -f
 
 # Stop
 docker-compose down
+```
+
+**Option 2: Using Docker directly:**
+```bash
+# Build the image
+docker build -t arena-copy-trader .
+
+# Run the container
+docker run -d \
+  --name arena-copy-trader \
+  --restart unless-stopped \
+  --env-file .env \
+  arena-copy-trader
+
+# View logs
+docker logs -f arena-copy-trader
+
+# Stop and remove
+docker stop arena-copy-trader
+docker rm arena-copy-trader
 ```
 
 Requires `COPY_TRADING_TARGET_WALLET` in `.env`. Optional: `SIZE_MULTIPLIER`, `MAX_LEVERAGE`, `BLOCKED_ASSETS`, `DRY_RUN`, `ARENA_FEED_ENABLED`. Position opens and closes are posted to your Arena feed when enabled. Pre-existing positions at startup are ignored.
