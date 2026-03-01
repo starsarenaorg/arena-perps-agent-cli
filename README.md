@@ -89,16 +89,16 @@ npm run copy-trade
 
 ### Run with Docker:
 
-**Option 1: Using Docker Compose (if installed):**
+**Option 1: Using Docker Compose:**
 ```bash
 # Build and start
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop
-docker-compose down
+docker compose down
 ```
 
 **Option 2: Using Docker directly:**
